@@ -8,6 +8,7 @@ import { SectionCard } from '@/components/ui';
 import { getPostSignInHref, isPendingInvitePath } from '@/features/session/postAuthRoute';
 import { useOnboardingStore } from '@/features/session/onboardingStore';
 import { useSessionStore } from '@/features/session/sessionStore';
+import { authScreenCopy, isSupabaseApiMode } from '@/services/apiMode';
 import { useServices } from '@/services/ServiceContext';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
@@ -51,7 +52,7 @@ export default function SignUpScreen() {
   return (
     <SectionScaffold
       kicker="Account"
-      lead="We’ll use this to save your space—still mock-only on this build."
+      lead={authScreenCopy.signUpLead(isSupabaseApiMode())}
       title="Create an account"
     >
       {formError ? (

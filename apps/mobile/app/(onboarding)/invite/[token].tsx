@@ -2,7 +2,7 @@
  * Invite acceptance screen. Opened by:
  * - Manual navigation from enter-code, or
  * - Deep link: `lovedistance://invite/<token>` (see `parseDeepLink` + root `_layout` URL listener).
- * Later: validate token with Supabase before pairing; keep the same path shape.
+ * With `EXPO_PUBLIC_API_MODE=supabase`, accept is validated by the `accept-invite` Edge function.
  */
 import { useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams, usePathname } from 'expo-router';
@@ -13,6 +13,7 @@ import { Button } from '@/components/primitives';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useSessionStore } from '@/features/session/sessionStore';
+import { isSupabaseApiMode, pairingScreenCopy } from '@/services/apiMode';
 import { useServices } from '@/services/ServiceContext';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
@@ -23,6 +24,7 @@ export default function InviteAcceptanceScreen() {
   const { token: tokenParam } = useLocalSearchParams<{ token: string | string[] }>();
   const token = (Array.isArray(tokenParam) ? tokenParam[0] : tokenParam)?.trim() ?? '';
   const pathname = usePathname();
+  const live = isSupabaseApiMode();
   const services = useServices();
   const theme = useTheme();
   const isSignedIn = useSessionStore((state) => state.isSignedIn);
@@ -57,6 +59,7 @@ export default function InviteAcceptanceScreen() {
       await services.couple.acceptInvite(token);
       setPaired(true);
       await queryClient.invalidateQueries({ queryKey: ['couple'] });
+      await queryClient.invalidateQueries({ queryKey: ['auth', 'session'] });
       router.replace('/(onboarding)/pairing/linked');
     } catch (e) {
       setPhase('idle');
@@ -94,7 +97,7 @@ export default function InviteAcceptanceScreen() {
     return (
       <SectionScaffold
         kicker="Invite"
-        lead="You are already linked with someone in this build."
+        lead={pairingScreenCopy.inviteAlreadyPairedLead(live)}
         title="You’re already paired"
       >
         <SectionCard>
@@ -128,7 +131,7 @@ export default function InviteAcceptanceScreen() {
   return (
     <SectionScaffold
       kicker="Invite"
-      lead="You’re signed in. Joining will link this app to your couple space (mock: in-memory for now)."
+      lead={pairingScreenCopy.inviteJoinLead(live)}
       title="Join your partner"
     >
       {error ? (
@@ -141,7 +144,7 @@ export default function InviteAcceptanceScreen() {
             <Body>Confirm you copied the full code from the latest invite link.</Body>
           ) : null}
           {error.includes('already') && !error.includes('paired with someone') ? (
-            <Body>This code was already redeemed in mock mode on this device.</Body>
+            <Body>{pairingScreenCopy.inviteErrorRedeemedHint(live)}</Body>
           ) : null}
         </View>
       ) : null}

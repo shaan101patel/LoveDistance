@@ -62,6 +62,11 @@ function RootLayoutNav() {
         return;
       }
       const target = targetPathFromRef(ref);
+      if (ref.kind === 'invite' && !isSignedIn) {
+        setReturnPath(target);
+        router.replace('/(auth)/sign-in' as Href);
+        return;
+      }
       if (
         shouldDeferDeepLink(ref, {
           isSignedIn,

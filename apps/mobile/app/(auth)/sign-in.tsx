@@ -8,6 +8,7 @@ import { SectionCard } from '@/components/ui';
 import { getPostSignInHref, isPendingInvitePath } from '@/features/session/postAuthRoute';
 import { useOnboardingStore } from '@/features/session/onboardingStore';
 import { useSessionStore } from '@/features/session/sessionStore';
+import { authScreenCopy, isSupabaseApiMode } from '@/services/apiMode';
 import { useServices } from '@/services/ServiceContext';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
@@ -48,7 +49,7 @@ export default function SignInScreen() {
   return (
     <SectionScaffold
       kicker="Account"
-      lead="Your session is stored locally in mock mode—perfect for building the full flow."
+      lead={authScreenCopy.signInLead(isSupabaseApiMode())}
       title="Sign in"
     >
       {formError ? (

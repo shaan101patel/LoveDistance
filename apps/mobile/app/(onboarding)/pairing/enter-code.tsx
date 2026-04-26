@@ -5,6 +5,7 @@ import { Text, View } from 'react-native';
 import { Button, Input } from '@/components/primitives';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { SectionCard } from '@/components/ui';
+import { isSupabaseApiMode, pairingScreenCopy } from '@/services/apiMode';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
@@ -36,6 +37,8 @@ function extractToken(raw: string): string {
 
 export default function EnterInviteCodeScreen() {
   const theme = useTheme();
+  const live = isSupabaseApiMode();
+  const mockQaFooter = pairingScreenCopy.enterCodeFooterMockQa(live);
   const [raw, setRaw] = useState('');
   const [error, setError] = useState('');
 
@@ -47,9 +50,7 @@ export default function EnterInviteCodeScreen() {
       return;
     }
     if (token === 'open-in-app') {
-      setError(
-        'That is a placeholder. Use a real code from an invite, or try “expired” / “used” to see errors.',
-      );
+      setError(pairingScreenCopy.enterCodePlaceholderError(live));
       return;
     }
     router.push(`/(onboarding)/invite/${encodeURIComponent(token)}`);
@@ -60,21 +61,17 @@ export default function EnterInviteCodeScreen() {
       footer={
         <View style={{ gap: spacing.xs }}>
           <Text style={{ ...theme.type.caption, color: theme.colors.textSecondary }}>
-            Deep link shape (stable for production):{' '}
-            <Text style={{ fontWeight: '600' }}>/(onboarding)/invite/TOKEN</Text> — the same file
-            handles manual entry and URL opens.
+            {pairingScreenCopy.enterCodeFooterShape()}
           </Text>
-          <Text style={{ ...theme.type.caption, color: theme.colors.textSecondary }}>
-            Mock edge cases: type <Text style={{ fontWeight: '600' }}>open-in-app</Text> or{' '}
-            <Text style={{ fontWeight: '600' }}>example</Text> to see the placeholder state; use{' '}
-            <Text style={{ fontWeight: '600' }}>expired</Text>,{' '}
-            <Text style={{ fontWeight: '600' }}>used</Text>, or{' '}
-            <Text style={{ fontWeight: '600' }}>invalid</Text> for error copy.
-          </Text>
+          {mockQaFooter ? (
+            <Text style={{ ...theme.type.caption, color: theme.colors.textSecondary }}>
+              {mockQaFooter}
+            </Text>
+          ) : null}
         </View>
       }
       kicker="Join"
-      lead="Paste a lovedistance:// link or the short code. We resolve client-side; a future Supabase implementation keeps this route and validates server-side."
+      lead={pairingScreenCopy.enterCodeLead(live)}
       title="Enter invite"
     >
       {error ? (

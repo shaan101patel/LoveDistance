@@ -53,7 +53,11 @@ export const supabaseServices: ServiceRegistry = {
       }
       const { data, error } = await sb.auth.signInWithPassword({ email: trimmed, password });
       if (error || !data.user) {
-        throw new Error(error?.message ?? 'Sign in failed');
+        const msg = error?.message ?? 'Sign in failed';
+        if (/email not confirmed|confirm your email/i.test(msg)) {
+          throw new Error('Please confirm your email before signing in.');
+        }
+        throw new Error(msg);
       }
       const profile = await loadProfileRow(data.user.id);
       return toSession(data.user, profile);
@@ -74,6 +78,11 @@ export const supabaseServices: ServiceRegistry = {
       });
       if (error || !data.user) {
         throw new Error(error?.message ?? 'Sign up failed');
+      }
+      if (!data.session) {
+        throw new Error(
+          'Check your email to confirm your account, then sign in. You are not signed in yet.',
+        );
       }
       const profile = await loadProfileRow(data.user.id);
       return toSession(data.user, profile);

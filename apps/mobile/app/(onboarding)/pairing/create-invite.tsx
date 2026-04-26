@@ -6,6 +6,7 @@ import { Button } from '@/components/primitives';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useSessionStore } from '@/features/session/sessionStore';
+import { isSupabaseApiMode, pairingScreenCopy } from '@/services/apiMode';
 import { useServices } from '@/services/ServiceContext';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
@@ -14,6 +15,7 @@ type Phase = 'idle' | 'loading' | 'ready' | 'error';
 
 export default function CreateInviteScreen() {
   const theme = useTheme();
+  const live = isSupabaseApiMode();
   const services = useServices();
   const isPaired = useSessionStore((s) => s.isPaired);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -52,7 +54,7 @@ export default function CreateInviteScreen() {
   return (
     <SectionScaffold
       kicker="Invite"
-      lead="We generate a one-time style invite for mock mode. Your partner can open the link or type the code."
+      lead={pairingScreenCopy.createInviteLead(live)}
       title="Create an invite"
     >
       {phase === 'error' && message ? (
@@ -63,7 +65,7 @@ export default function CreateInviteScreen() {
         <SectionCard>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
             <ActivityIndicator color={theme.colors.primary} />
-            <Body>Creating a fresh invite for mock mode…</Body>
+            <Body>{pairingScreenCopy.createInviteLoadingBody(live)}</Body>
           </View>
         </SectionCard>
       ) : null}

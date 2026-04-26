@@ -8,6 +8,7 @@ import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useOnboardingStore } from '@/features/session/onboardingStore';
 import { useSessionStore } from '@/features/session/sessionStore';
+import { authScreenCopy, isSupabaseApiMode } from '@/services/apiMode';
 import { useServices } from '@/services/ServiceContext';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
@@ -27,6 +28,7 @@ export default function SettingsHubScreen() {
     await resetOnboardingForSignOut();
     setPaired(false);
     setSignedIn(false);
+    await queryClient.invalidateQueries({ queryKey: ['auth', 'session'] });
     await queryClient.invalidateQueries({ queryKey: ['couple'] });
     await queryClient.invalidateQueries({ queryKey: ['notifications', 'prefs'] });
     await queryClient.invalidateQueries({ queryKey: ['notifications', 'inbox'] });
@@ -37,7 +39,7 @@ export default function SettingsHubScreen() {
   return (
     <SectionScaffold
       kicker="You"
-      lead="MVP: preferences live in the mock in-memory store and reset on sign out."
+      lead={authScreenCopy.settingsLead(isSupabaseApiMode())}
       title="Settings"
     >
       <SectionCard>
