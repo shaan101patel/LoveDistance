@@ -10,6 +10,7 @@ import {
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useRelationshipDashboard } from '@/features/hooks';
+import { authScreenCopy, isSupabaseApiMode } from '@/services/apiMode';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
@@ -20,7 +21,7 @@ export default function RelationshipDashboardScreen() {
   return (
     <SectionScaffold
       kicker="Together"
-      lead="A gentle look back—sample rhythms from mock data until real analytics arrive."
+      lead={authScreenCopy.relationshipDashboardLead(isSupabaseApiMode())}
       title="Your rhythm"
     >
       {isLoading ? (

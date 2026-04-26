@@ -1,7 +1,6 @@
 import type { ServiceRegistry } from '@/services/ports';
 import { getPathFromRef, parseDeepLink } from '@/lib/deepLinking/deepLinkService';
 import { weekMetaFromMondayYmd } from '@/features/weeklyRecap/recapCandidateFilter';
-import { mockRelationshipDashboardSnapshot } from '@/services/mock/mockData';
 import { isSupabaseConfigured, supabaseClient } from '@/services/supabase/client';
 import { loadProfileRow, requireClient, toSession } from '@/services/supabase/helpers';
 import * as backend from '@/services/supabase/supabaseBackend';
@@ -176,9 +175,7 @@ export const supabaseServices: ServiceRegistry = {
     toPath: getPathFromRef,
   },
   relationshipDashboard: {
-    async getSnapshot() {
-      return mockRelationshipDashboardSnapshot;
-    },
+    getSnapshot: () => backend.getRelationshipDashboardSnapshot(),
   },
   subscription: {
     async getSubscription() {

@@ -1,6 +1,29 @@
-import type { CoupleProfile, Habit, MemoryItem, NotificationCategory, NotificationInboxItem, NotificationPrefs, PresencePost, PrivacySettings, AppLockSettings, PromptThread, PromptThreadActivity, PromptThreadCategory, PromptThreadReply, RitualSignalEntry, RitualSignalKind, TimelineMemoryFilter, UserProfile } from '@/types/domain';
+import type {
+  CoupleProfile,
+  Habit,
+  MemoryItem,
+  NotificationCategory,
+  NotificationInboxItem,
+  NotificationPrefs,
+  PresencePost,
+  PrivacySettings,
+  AppLockSettings,
+  PromptThread,
+  PromptThreadActivity,
+  PromptThreadCategory,
+  PromptThreadReply,
+  RelationshipDashboardCategoryShare,
+  RelationshipDashboardMemoryHighlight,
+  RelationshipDashboardSnapshot,
+  RelationshipDashboardWeekRhythm,
+  RitualSignalEntry,
+  RitualSignalKind,
+  TimelineMemoryFilter,
+  UserProfile,
+} from '@/types/domain';
 import type { Tables, TablesUpdate } from '@/services/supabase/database.types';
 import { isUserAllowedToToggleHabit } from '@/features/habits/habitPolicy';
+import { getIsPromptRevealed } from '@/features/prompts/revealLogic';
 import { mapInviteFailure, requireClient, signedUrlForBucketPath, todayYmdUtc } from '@/services/supabase/helpers';
 const DEFAULT_PROMPT_QUESTION = 'What brought you closer today?';
 
@@ -97,7 +120,7 @@ async function rowToPromptThread(row: Tables<'couple_prompts'>): Promise<PromptT
     question: row.question,
     category: mapCategory(row),
     answers: resolvedAnswers,
-    isRevealed: row.is_revealed,
+    isRevealed: row.is_revealed || getIsPromptRevealed(resolvedAnswers),
     reactions: (reactions ?? []).map((r) => ({
       id: r.id,
       userId: r.user_id,
@@ -747,6 +770,192 @@ export async function listRecentRitualSignals(limit: number): Promise<RitualSign
     authorId: r.author_id,
     createdAt: r.created_at,
   }));
+}
+
+function utcMondayYmd(d: Date): string {
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth();
+  const day = d.getUTCDate();
+  const dow = d.getUTCDay();
+  const diff = (dow + 6) % 7;
+  const mon = new Date(Date.UTC(y, m, day - diff));
+  return mon.toISOString().slice(0, 10);
+}
+
+function weekStartUtcFromPromptYmd(ymd: string): string {
+  const d = new Date(`${ymd}T12:00:00.000Z`);
+  return utcMondayYmd(d);
+}
+
+function monthYearLabel(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
+function lastNMondayKeysDescending(n: number): string[] {
+  const keys: string[] = [];
+  let cur = utcMondayYmd(new Date());
+  for (let i = 0; i < n; i++) {
+    keys.push(cur);
+    const [y, mo, da] = cur.split('-').map(Number);
+    const prev = new Date(Date.UTC(y!, mo! - 1, da! - 7));
+    cur = utcMondayYmd(prev);
+  }
+  return keys.reverse();
+}
+
+function shortWeekLabel(mondayYmd: string): string {
+  const d = new Date(`${mondayYmd}T12:00:00.000Z`);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
+/** Aggregates couple activity for the relationship dashboard (Supabase-backed). */
+export async function getRelationshipDashboardSnapshot(): Promise<RelationshipDashboardSnapshot> {
+  const couple = await loadCompleteCoupleProfile();
+  if (!couple) {
+    throw new Error('Complete pairing first to use this feature.');
+  }
+  const sb = requireClient();
+  const coupleId = couple.id;
+  const generatedAt = new Date().toISOString();
+
+  const since = new Date();
+  since.setUTCDate(since.getUTCDate() - 56);
+  const sinceYmd = since.toISOString().slice(0, 10);
+  const sinceIso = since.toISOString();
+
+  const [{ count: memoryTotal }, { data: memHighlights }, { data: promptRows }, { data: memTypes }] = await Promise.all([
+    sb.from('memories').select('*', { count: 'exact', head: true }).eq('couple_id', coupleId),
+    sb
+      .from('memories')
+      .select('id, title, created_at')
+      .eq('couple_id', coupleId)
+      .order('created_at', { ascending: false })
+      .limit(3),
+    sb
+      .from('couple_prompts')
+      .select('id, prompt_date, is_revealed')
+      .eq('couple_id', coupleId)
+      .gte('prompt_date', sinceYmd),
+    sb.from('memories').select('type').eq('couple_id', coupleId).gte('created_at', sinceIso),
+  ]);
+
+  const promptList = promptRows ?? [];
+  const promptIds = promptList.map((p) => p.id);
+
+  const { data: answersForPrompts } =
+    promptIds.length > 0
+      ? await sb.from('prompt_answers').select('couple_prompt_id, user_id').in('couple_prompt_id', promptIds)
+      : { data: [] as { couple_prompt_id: string; user_id: string }[] };
+
+  const answerersByPrompt = new Map<string, Set<string>>();
+  for (const a of answersForPrompts ?? []) {
+    const s = answerersByPrompt.get(a.couple_prompt_id) ?? new Set<string>();
+    s.add(a.user_id);
+    answerersByPrompt.set(a.couple_prompt_id, s);
+  }
+
+  const promptsByWeek = new Map<string, typeof promptList>();
+  for (const p of promptList) {
+    const wk = weekStartUtcFromPromptYmd(p.prompt_date);
+    const arr = promptsByWeek.get(wk) ?? [];
+    arr.push(p);
+    promptsByWeek.set(wk, arr);
+  }
+
+  const weekKeys = lastNMondayKeysDescending(8);
+  const weeks: RelationshipDashboardWeekRhythm[] = weekKeys.map((wk) => {
+    const inWeek = promptsByWeek.get(wk) ?? [];
+    if (inWeek.length === 0) {
+      return { weekLabel: shortWeekLabel(wk), bothEngagedScore: 0 };
+    }
+    let ok = 0;
+    for (const pr of inWeek) {
+      const n = answerersByPrompt.get(pr.id)?.size ?? 0;
+      if (pr.is_revealed || n >= 2) {
+        ok++;
+      }
+    }
+    return { weekLabel: shortWeekLabel(wk), bothEngagedScore: ok / inWeek.length };
+  });
+
+  const { data: gratitudeRows } = await sb
+    .from('memories')
+    .select('created_at')
+    .eq('couple_id', coupleId)
+    .eq('type', 'gratitude')
+    .gte('created_at', since.toISOString());
+
+  const gratWeekKeys = lastNMondayKeysDescending(5);
+  const gratitudeByWeek = new Map<string, number>();
+  for (const r of gratitudeRows ?? []) {
+    const wk = utcMondayYmd(new Date(r.created_at));
+    gratitudeByWeek.set(wk, (gratitudeByWeek.get(wk) ?? 0) + 1);
+  }
+  const entriesPerWeek = gratWeekKeys.map((wk) => gratitudeByWeek.get(wk) ?? 0);
+
+  const typeLabels: Record<string, string> = {
+    prompt: 'Daily prompts',
+    photo: 'Photos',
+    gratitude: 'Gratitude',
+    milestone: 'Milestones',
+  };
+  const typeCounts = new Map<string, number>();
+  for (const r of memTypes ?? []) {
+    const t = r.type as string;
+    typeCounts.set(t, (typeCounts.get(t) ?? 0) + 1);
+  }
+  const totalTyped = [...typeCounts.values()].reduce((a, b) => a + b, 0);
+  let items: RelationshipDashboardCategoryShare[] = [];
+  if (totalTyped === 0) {
+    items = [{ label: 'Your mix is still forming', share: 1 }];
+  } else {
+    items = [...typeCounts.entries()]
+      .map(([type, c]) => ({
+        label: typeLabels[type] ?? type,
+        share: c / totalTyped,
+      }))
+      .sort((a, b) => b.share - a.share);
+  }
+
+  const total = memoryTotal ?? 0;
+  const headline =
+    total === 0
+      ? 'Your story together is just getting started—small moments will fill this space soon.'
+      : `You have ${total} saved moments together. Steady check-ins matter more than a perfect streak.`;
+
+  const highlights: RelationshipDashboardMemoryHighlight[] = (memHighlights ?? []).map((m) => ({
+    id: m.id,
+    title: m.title,
+    savedAtLabel: monthYearLabel(m.created_at),
+  }));
+
+  return {
+    generatedAt,
+    headline,
+    promptRhythm: {
+      insight:
+        'Each week shows how often you both completed the daily prompt when it was available—small consistency beats rare perfection.',
+      weeks,
+    },
+    gratitude: {
+      insight:
+        gratitudeRows?.length
+          ? 'Gratitude memories you saved recently, grouped by week.'
+          : 'When you save gratitude moments to the timeline, they will show up here.',
+      weekLabels: gratWeekKeys.map(shortWeekLabel),
+      entriesPerWeek,
+    },
+    favoriteCategories: {
+      insight: 'Share of recent timeline entries by type (last ~8 weeks).',
+      items,
+    },
+    savedMemories: {
+      insight: 'Recent highlights from your shared timeline.',
+      totalCount: total,
+      highlights,
+    },
+  };
 }
 
 export async function listPhotoCandidatesForWeek(anchorIso: string): Promise<PresencePost[]> {

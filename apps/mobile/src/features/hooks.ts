@@ -83,6 +83,7 @@ export function useSubmitPrompt() {
     onSuccess: (next) => {
       syncPromptQueries(queryClient, next);
       queryClient.invalidateQueries({ queryKey: ['timeline'] });
+      queryClient.invalidateQueries({ queryKey: ['relationshipDashboard'] });
     },
   });
 }
@@ -181,6 +182,7 @@ export function useSharePresence() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['presence', 'feed'] });
       queryClient.invalidateQueries({ queryKey: ['timeline'] });
+      queryClient.invalidateQueries({ queryKey: ['relationshipDashboard'] });
     },
   });
 }
@@ -373,7 +375,7 @@ export function useAppLock() {
   return { query, mutation };
 }
 
-/** Mock aggregate “emotional dashboard”; swap `relationshipDashboard` service when real analytics ship. */
+/** Relationship insights; Supabase mode uses aggregated couple data in `getRelationshipDashboardSnapshot`. */
 export function useRelationshipDashboard() {
   const services = useServices();
   return useQuery({

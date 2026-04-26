@@ -5,11 +5,13 @@ import { EmptyState } from '@/components/primitives';
 import { PremiumGate, PremiumUpsellBanner } from '@/components/premium';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
+import { isSupabaseApiMode, promptTabCopy } from '@/services/apiMode';
 import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 export default function PromptTabScreen() {
   const theme = useTheme();
+  const live = isSupabaseApiMode();
   return (
     <SectionScaffold
       kicker="Today"
@@ -18,12 +20,12 @@ export default function PromptTabScreen() {
     >
       <SectionCard>
         <EmptyState
-          title="No prompt session yet"
-          description="The daily prompt, delayed reveal, and thread will show in this space."
+          title={promptTabCopy.emptyTitle(live)}
+          description={promptTabCopy.emptyDescription(live)}
         />
         <Link href="/(app)/prompt/prompt-placeholder">
           <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>
-            Open prompt thread placeholder
+            {promptTabCopy.openThreadLinkLabel(live)}
           </Text>
         </Link>
       </SectionCard>
@@ -45,7 +47,7 @@ export default function PromptTabScreen() {
           }
         >
           <SectionCard>
-            <Body>You are on Plus (mock). Themed prompt packs will appear here in a future release.</Body>
+            <Body>{promptTabCopy.plusUnlockedBody(live)}</Body>
           </SectionCard>
         </PremiumGate>
       </View>

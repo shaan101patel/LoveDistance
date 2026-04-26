@@ -5,6 +5,7 @@ import { Button } from '@/components/primitives';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useCouple } from '@/features/hooks';
+import { authScreenCopy, isSupabaseApiMode } from '@/services/apiMode';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
@@ -35,7 +36,7 @@ export default function SettingsRelationshipScreen() {
   return (
     <SectionScaffold
       kicker="Together"
-      lead="Couple record is mock in-memory. Supabase will store couple id, both user ids, and relationship metadata."
+      lead={authScreenCopy.relationshipSettingsLead(isSupabaseApiMode())}
       title="Relationship"
     >
       <SectionCard>

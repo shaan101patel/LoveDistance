@@ -35,6 +35,16 @@ export const authScreenCopy = {
   settingsSignOutButtonLabel(live: boolean): string {
     return live ? 'Sign out' : 'Sign out (mock)';
   },
+  relationshipSettingsLead(live: boolean): string {
+    return live
+      ? 'Your couple link, reunion date, and shared activity are stored in Supabase for this account.'
+      : 'Couple record is mock in-memory. Supabase will store couple id, both user ids, and relationship metadata.';
+  },
+  relationshipDashboardLead(live: boolean): string {
+    return live
+      ? 'A gentle look back at prompts, timeline entries, and saved moments from your couple data.'
+      : 'A gentle look back—sample rhythms from mock data until real analytics arrive.';
+  },
 };
 
 /** Pairing / invite onboarding copy; branch on `EXPO_PUBLIC_API_MODE`. */
@@ -101,5 +111,25 @@ export const pairingScreenCopy = {
     return live
       ? 'Create an invite or enter your partner’s code. Invite tokens use the inv-… shape and appear after invite/ in shared links and lovedistance:// URLs.'
       : 'Mock pairing: create a link, or enter a code. Real tokens use the inv-… shape (after invite/ in the URL). Try expired, used, or invalid in enter-code to see edge states.';
+  },
+};
+
+/** Prompt tab placeholder copy; branch on `EXPO_PUBLIC_API_MODE`. */
+export const promptTabCopy = {
+  emptyTitle(live: boolean): string {
+    return live ? 'Open today’s prompt from Home' : 'No prompt session yet';
+  },
+  emptyDescription(live: boolean): string {
+    return live
+      ? 'Your daily question, answers, delayed reveal, and thread live on Home and in the full prompt screen—this tab is for extras.'
+      : 'The daily prompt, delayed reveal, and thread will show in this space.';
+  },
+  openThreadLinkLabel(live: boolean): string {
+    return live ? 'Open sample prompt thread' : 'Open prompt thread placeholder';
+  },
+  plusUnlockedBody(live: boolean): string {
+    return live
+      ? 'You are on Plus. Themed prompt packs will appear here in a future release.'
+      : 'You are on Plus (mock). Themed prompt packs will appear here in a future release.';
   },
 };
