@@ -133,3 +133,21 @@ export const promptTabCopy = {
       : 'You are on Plus (mock). Themed prompt packs will appear here in a future release.';
   },
 };
+
+/** Timeline tab lead; branch on `EXPO_PUBLIC_API_MODE`. */
+export const timelineTabCopy = {
+  tabLead(live: boolean): string {
+    return live
+      ? 'Prompts, photos, and shared moments from your couple show here—synced when you use Supabase.'
+      : 'Prompts, photos, and moments in one place—local mock data until the backend is wired.';
+  },
+};
+
+/** Photos tab lead; branch on `EXPO_PUBLIC_API_MODE`. */
+export const photosTabCopy = {
+  tabLead(live: boolean): string {
+    return live
+      ? 'Share a still from your day. Your couple feed is stored in Supabase for you and your partner.'
+      : 'Share a still from your day. Everything here is local mock data until the backend is wired.';
+  },
+};

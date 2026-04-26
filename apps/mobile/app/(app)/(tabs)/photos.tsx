@@ -14,6 +14,7 @@ import { PhotoPostCard } from '@/components/presence';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body } from '@/components/ui';
 import { useCouple, useCurrentUserId, usePresenceFeed, useReactToPost } from '@/features/hooks';
+import { isSupabaseApiMode, photosTabCopy } from '@/services/apiMode';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { PresencePost } from '@/types/domain';
 import { spacing } from '@/theme/tokens';
@@ -24,6 +25,7 @@ const GAP = spacing.lg;
 
 export default function PhotosTabScreen() {
   const theme = useTheme();
+  const live = isSupabaseApiMode();
   const router = useRouter();
   const { data: couple } = useCouple();
   const { meId } = useCurrentUserId();
@@ -82,7 +84,7 @@ export default function PhotosTabScreen() {
     return (
       <SectionScaffold
         kicker="Presence"
-        lead="Share a still from your day. Everything here is local mock data until the backend is wired."
+        lead={photosTabCopy.tabLead(live)}
         title="Photos"
       >
         <View style={styles.center}>
@@ -97,7 +99,7 @@ export default function PhotosTabScreen() {
     return (
       <SectionScaffold
         kicker="Presence"
-        lead="Share a still from your day. Everything here is local mock data until the backend is wired."
+        lead={photosTabCopy.tabLead(live)}
         title="Photos"
       >
         <View style={styles.errorBlock}>
@@ -119,7 +121,7 @@ export default function PhotosTabScreen() {
     return (
       <SectionScaffold
         kicker="Presence"
-        lead="Share a still from your day. Everything here is local mock data until the backend is wired."
+        lead={photosTabCopy.tabLead(live)}
         title="Photos"
       >
         <Body>We need your profile to show who shared each post.</Body>
@@ -130,7 +132,7 @@ export default function PhotosTabScreen() {
   return (
     <SectionScaffold
       kicker="Presence"
-      lead="Share a still from your day. Everything here is local mock data until the backend is wired."
+      lead={photosTabCopy.tabLead(live)}
       scrollable={false}
       title="Photos"
     >

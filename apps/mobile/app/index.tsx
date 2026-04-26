@@ -1,6 +1,7 @@
 import type { Href } from 'expo-router';
 import { Redirect } from 'expo-router';
 
+import { isPendingInvitePath, toOnboardingInviteHref } from '@/features/session/postAuthRoute';
 import { useOnboardingStore } from '@/features/session/onboardingStore';
 import { useSessionStore } from '@/features/session/sessionStore';
 
@@ -33,6 +34,10 @@ export default function Index() {
 
   if (returnPath?.startsWith('/(app)')) {
     return <Redirect href={returnPath as Href} />;
+  }
+
+  if (returnPath && isPendingInvitePath(returnPath)) {
+    return <Redirect href={toOnboardingInviteHref(returnPath)} />;
   }
 
   return <Redirect href="/(app)/(tabs)/home" />;

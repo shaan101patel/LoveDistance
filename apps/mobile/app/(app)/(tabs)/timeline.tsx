@@ -13,6 +13,7 @@ import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useTimeline } from '@/features/hooks';
+import { isSupabaseApiMode, timelineTabCopy } from '@/services/apiMode';
 import type { MemoryItem, TimelineMemoryFilter } from '@/types/domain';
 import { spacing } from '@/theme/tokens';
 
@@ -33,11 +34,12 @@ function emptyBody(filter: TimelineMemoryFilter, hasSource: boolean): string {
 
 export default function TimelineScreen() {
   const theme = useTheme();
+  const live = isSupabaseApiMode();
   const [filter, setFilter] = useState<TimelineMemoryFilter>('all');
   const [search, setSearch] = useState('');
   const { data: memories, isLoading, isError, isRefetching, refetch } = useTimeline(filter);
 
-  const baseList = memories ?? [];
+  const baseList = useMemo(() => memories ?? [], [memories]);
   const displayMemories = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) {
@@ -77,7 +79,7 @@ export default function TimelineScreen() {
     return (
       <SectionScaffold
         kicker="Together"
-        lead="Prompts, photos, and moments in one place—local mock data until the backend is wired."
+        lead={timelineTabCopy.tabLead(live)}
         title="Timeline"
       >
         <ActivityIndicator color={theme.colors.primary} size="large" />
@@ -90,7 +92,7 @@ export default function TimelineScreen() {
     return (
       <SectionScaffold
         kicker="Together"
-        lead="Prompts, photos, and moments in one place—local mock data until the backend is wired."
+        lead={timelineTabCopy.tabLead(live)}
         title="Timeline"
       >
         <Body>Couldn’t load the timeline.</Body>
@@ -112,7 +114,7 @@ export default function TimelineScreen() {
   return (
     <SectionScaffold
       kicker="Together"
-      lead="Prompts, photos, and moments in one place—local mock data until the backend is wired."
+      lead={timelineTabCopy.tabLead(live)}
       scrollable={false}
       title="Timeline"
     >
