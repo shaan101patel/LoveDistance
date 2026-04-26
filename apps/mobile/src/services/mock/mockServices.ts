@@ -1,19 +1,24 @@
 import type { ServiceRegistry } from '@/services/ports';
 import type {
   NotificationInboxItem,
+  PresencePost,
   RitualSignalEntry,
   Session,
+  SubscriptionTier,
   TimelineMemoryFilter,
   UserProfile,
 } from '@/types/domain';
 import {
   cloneThreadActivity,
   initialAppLock,
+  initialPresencePosts,
   initialPrefs,
+  initialSubscription,
   initialPrivacy,
   initialNotificationInbox,
   initialRitualSignals,
   mockDb,
+  mockRelationshipDashboardSnapshot,
   mockMe,
   mockPartner,
   refreshRevealState,
@@ -22,10 +27,26 @@ import {
 } from '@/services/mock/mockData';
 import { getPathFromRef, parseDeepLink } from '@/lib/deepLinking/deepLinkService';
 import { isUserAllowedToToggleHabit } from '@/features/habits/habitPolicy';
+import {
+  filterPresencePostsInWeek,
+  weekMetaFromMondayYmd,
+} from '@/features/weeklyRecap/recapCandidateFilter';
 
 async function withLatency<T>(result: T): Promise<T> {
   await new Promise((resolve) => setTimeout(resolve, 250));
   return result;
+}
+
+/** Recap week filter sees fixture posts even if `mockDb.posts` was replaced during dev. */
+function recapPostPool(): PresencePost[] {
+  const m = new Map<string, PresencePost>();
+  for (const p of initialPresencePosts) {
+    m.set(p.id, p);
+  }
+  for (const p of mockDb.posts) {
+    m.set(p.id, p);
+  }
+  return [...m.values()];
 }
 
 function userIdFromEmail(email: string): string {
@@ -121,6 +142,7 @@ export const mockServices: ServiceRegistry = {
       resetThreadActivityToInitial();
       mockDb.ritualSignals = [...initialRitualSignals];
       mockDb.notificationInbox = initialNotificationInbox.map((n) => ({ ...n }));
+      mockDb.subscription = { ...initialSubscription };
       return withLatency(undefined);
     },
   },
@@ -489,5 +511,50 @@ export const mockServices: ServiceRegistry = {
   deepLinks: {
     parseUrl: parseDeepLink,
     toPath: getPathFromRef,
+  },
+  relationshipDashboard: {
+    async getSnapshot() {
+      return withLatency(mockRelationshipDashboardSnapshot);
+    },
+  },
+  weeklyRecap: {
+    async listPhotoCandidatesForWeek(anchorIso) {
+      return withLatency(filterPresencePostsInWeek(recapPostPool(), anchorIso));
+    },
+    async buildRecapDraft({ weekStartYmd, selectedPhotoIds }) {
+      const uniq = [...new Set(selectedPhotoIds)].slice(0, 5);
+      if (uniq.length === 0) {
+        throw new Error('Pick at least one photo for your recap.');
+      }
+      const week = weekMetaFromMondayYmd(weekStartYmd);
+      const byId = new Map(recapPostPool().map((p) => [p.id, p]));
+      const selectedPhotos = uniq.map((id) => {
+        const p = byId.get(id);
+        if (!p) {
+          throw new Error(`Unknown photo: ${id}`);
+        }
+        return p;
+      });
+      return withLatency({
+        week,
+        selectedPhotos,
+        bestQuestion: { status: 'placeholder' as const },
+        bestMoment: { status: 'placeholder' as const },
+      });
+    },
+  },
+  subscription: {
+    async getSubscription() {
+      return withLatency({ ...mockDb.subscription });
+    },
+    async setMockTier(tier: SubscriptionTier) {
+      mockDb.subscription = {
+        ...mockDb.subscription,
+        tier,
+        renewsAtIso: tier === 'premium' ? '2027-01-01T00:00:00.000Z' : null,
+        source: 'mock',
+      };
+      return withLatency({ ...mockDb.subscription });
+    },
   },
 };

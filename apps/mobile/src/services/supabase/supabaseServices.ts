@@ -1,5 +1,10 @@
 import type { ServiceRegistry } from '@/services/ports';
 import { getPathFromRef, parseDeepLink } from '@/lib/deepLinking/deepLinkService';
+import {
+  filterPresencePostsInWeek,
+  weekMetaFromMondayYmd,
+} from '@/features/weeklyRecap/recapCandidateFilter';
+import { initialPresencePosts, mockRelationshipDashboardSnapshot } from '@/services/mock/mockData';
 import { isSupabaseConfigured } from '@/services/supabase/client';
 
 function notReady<T>(name: string): Promise<T> {
@@ -79,5 +84,46 @@ export const supabaseServices: ServiceRegistry = {
   deepLinks: {
     parseUrl: parseDeepLink,
     toPath: getPathFromRef,
+  },
+  relationshipDashboard: {
+    /** Placeholder: same mock snapshot until a Supabase-backed analytics API exists. */
+    async getSnapshot() {
+      return mockRelationshipDashboardSnapshot;
+    },
+  },
+  subscription: {
+    /** Placeholder until RevenueCat / Stripe / server entitlements. */
+    async getSubscription() {
+      return { tier: 'free' as const, renewsAtIso: null, source: 'store' as const };
+    },
+  },
+  weeklyRecap: {
+    /**
+     * Read-only recap UI: frozen seed posts + placeholder draft until recap API + LLM exist.
+     */
+    async listPhotoCandidatesForWeek(anchorIso) {
+      return filterPresencePostsInWeek([...initialPresencePosts], anchorIso);
+    },
+    async buildRecapDraft({ weekStartYmd, selectedPhotoIds }) {
+      const uniq = [...new Set(selectedPhotoIds)].slice(0, 5);
+      if (uniq.length === 0) {
+        throw new Error('Pick at least one photo for your recap.');
+      }
+      const week = weekMetaFromMondayYmd(weekStartYmd);
+      const byId = new Map(initialPresencePosts.map((p) => [p.id, p]));
+      const selectedPhotos = uniq.map((id) => {
+        const p = byId.get(id);
+        if (!p) {
+          throw new Error(`Unknown photo: ${id}`);
+        }
+        return p;
+      });
+      return {
+        week,
+        selectedPhotos,
+        bestQuestion: { status: 'placeholder' as const },
+        bestMoment: { status: 'placeholder' as const },
+      };
+    },
   },
 };

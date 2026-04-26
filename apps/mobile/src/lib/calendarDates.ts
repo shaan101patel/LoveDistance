@@ -69,3 +69,22 @@ export function getMonthGridCells(visibleMonth: Date): MonthGridCell[] {
 }
 
 export const WEEKDAY_LABELS_MON_FIRST = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+
+export type WeekRangeLabelParts = {
+  weekStartYmd: string;
+  weekEndYmd: string;
+  /** Human-readable Mon–Sun span for recap headers. */
+  label: string;
+};
+
+/** Monday–Sunday local week containing `anchor`, with a short display label. */
+export function getWeekRangeLabelParts(anchor: Date): WeekRangeLabelParts {
+  const ymds = getWeekYmdsForDay(anchor);
+  const mon = getMondayOfWeek(anchor);
+  const sun = addLocalDays(mon, 6);
+  const label = `${mon.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  })} – ${sun.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  return { weekStartYmd: ymds[0]!, weekEndYmd: ymds[6]!, label };
+}

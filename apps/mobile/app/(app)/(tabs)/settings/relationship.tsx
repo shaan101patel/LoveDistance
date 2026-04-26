@@ -1,4 +1,4 @@
-import { Link, router } from 'expo-router';
+import { Link, router, type Href } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/primitives';
@@ -67,6 +67,13 @@ export default function SettingsRelationshipScreen() {
             </Text>
           </View>
         ) : null}
+        <Link href={'/(app)/relationship-dashboard' as Href} asChild>
+          <Pressable style={{ marginBottom: spacing.md }}>
+            <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>
+              Your rhythm — gentle trends (mock)
+            </Text>
+          </Pressable>
+        </Link>
         <Link href="/(onboarding)/pairing" asChild>
           <Pressable>
             <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>

@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Link, router } from 'expo-router';
+import { Link, router, type Href } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/primitives';
@@ -66,6 +66,11 @@ export default function SettingsHubScreen() {
             description="Paired state, partner, invites"
             label="Relationship"
             onPress={() => router.push(`${base}/relationship`)}
+          />
+          <SettingsLinkRow
+            description="Optional extras when billing arrives—core stays free"
+            label="LoveDistance Plus"
+            onPress={() => router.push('/(app)/plus' as Href)}
           />
         </View>
       </SectionCard>

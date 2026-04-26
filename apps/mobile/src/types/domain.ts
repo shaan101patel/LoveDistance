@@ -99,6 +99,37 @@ export type PresencePost = {
   reactionCount: number;
 };
 
+/** Sunday / weekly recap ranking slots; extend when LLM pipeline exists. */
+export type RecapRankingSlotStatus = 'placeholder' | 'pending' | 'ready';
+
+export type WeeklyRecapQuestionHighlight = {
+  status: RecapRankingSlotStatus;
+  promptId?: string;
+  question?: string;
+  rationale?: string;
+};
+
+export type WeeklyRecapMomentHighlight = {
+  status: RecapRankingSlotStatus;
+  momentRef?: string;
+  excerpt?: string;
+  rationale?: string;
+};
+
+export type WeeklyRecapWeekMeta = {
+  weekStartYmd: string;
+  weekEndYmd: string;
+  label: string;
+};
+
+/** Result of recap “generation”; mock uses placeholders for highlights. */
+export type WeeklyRecapDraft = {
+  week: WeeklyRecapWeekMeta;
+  selectedPhotos: PresencePost[];
+  bestQuestion: WeeklyRecapQuestionHighlight;
+  bestMoment: WeeklyRecapMomentHighlight;
+};
+
 export type HabitType = 'mine' | 'yours' | 'ours';
 
 /**
@@ -205,6 +236,64 @@ export type AppLockSettings = {
   requirePasscode: boolean;
   useBiometric: boolean;
   isPasscodeSet: boolean;
+};
+
+export type SubscriptionTier = 'free' | 'premium';
+
+export type SubscriptionState = {
+  tier: SubscriptionTier;
+  renewsAtIso: string | null;
+  source: 'mock' | 'store';
+};
+
+/** Premium-only surfaces; checked via `premiumUnlocks` / subscription tier. */
+export type PremiumFeature =
+  | 'extra_prompt_packs'
+  | 'advanced_home_widgets'
+  | 'theme_customization'
+  | 'data_export'
+  | 'deeper_analytics';
+
+/** Mock aggregate DTO for the relationship insights dashboard; replace with API-backed analytics later. */
+export type RelationshipDashboardWeekRhythm = {
+  weekLabel: string;
+  /** 0–1 how often both of you showed up for the daily prompt that week (aggregate). */
+  bothEngagedScore: number;
+};
+
+export type RelationshipDashboardCategoryShare = {
+  label: string;
+  /** 0–1 portion of themed moments in the sample window. */
+  share: number;
+};
+
+export type RelationshipDashboardMemoryHighlight = {
+  id: string;
+  title: string;
+  savedAtLabel: string;
+};
+
+export type RelationshipDashboardSnapshot = {
+  generatedAt: string;
+  headline: string;
+  promptRhythm: {
+    insight: string;
+    weeks: RelationshipDashboardWeekRhythm[];
+  };
+  gratitude: {
+    insight: string;
+    weekLabels: string[];
+    entriesPerWeek: number[];
+  };
+  favoriteCategories: {
+    insight: string;
+    items: RelationshipDashboardCategoryShare[];
+  };
+  savedMemories: {
+    insight: string;
+    totalCount: number;
+    highlights: RelationshipDashboardMemoryHighlight[];
+  };
 };
 
 export type AppTabName = 'home' | 'prompt' | 'photos' | 'calendar' | 'timeline' | 'settings';

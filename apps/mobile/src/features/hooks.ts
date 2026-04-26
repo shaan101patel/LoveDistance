@@ -1,7 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useServices } from '@/services/ServiceContext';
-import type { CoupleProfile, PresencePost, RitualSignalKind, TimelineMemoryFilter } from '@/types/domain';
+import { hasPremiumAccess } from '@/features/premium/entitlements';
+import type {
+  CoupleProfile,
+  PremiumFeature,
+  PresencePost,
+  RitualSignalKind,
+  SubscriptionTier,
+  TimelineMemoryFilter,
+} from '@/types/domain';
 
 /** Couple space for the signed-in user; null when unpaired. Invalidated after pairing / sign-out flows. */
 export function useCouple() {
@@ -363,4 +371,65 @@ export function useAppLock() {
     },
   });
   return { query, mutation };
+}
+
+/** Mock aggregate “emotional dashboard”; swap `relationshipDashboard` service when real analytics ship. */
+export function useRelationshipDashboard() {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['relationshipDashboard'] as const,
+    queryFn: () => services.relationshipDashboard.getSnapshot(),
+  });
+}
+
+export function useWeeklyRecapCandidates(anchorIso?: string) {
+  const services = useServices();
+  const key = anchorIso ?? 'today';
+  return useQuery({
+    queryKey: ['weeklyRecap', 'candidates', key] as const,
+    queryFn: () =>
+      services.weeklyRecap.listPhotoCandidatesForWeek(anchorIso ?? new Date().toISOString()),
+  });
+}
+
+export function useWeeklyRecapDraft(weekStartYmd: string, selectedPhotoIds: string[]) {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['weeklyRecap', 'draft', weekStartYmd, [...selectedPhotoIds].sort().join('|')] as const,
+    queryFn: () =>
+      services.weeklyRecap.buildRecapDraft({ weekStartYmd, selectedPhotoIds }),
+    enabled: Boolean(weekStartYmd && selectedPhotoIds.length),
+  });
+}
+
+export function useSubscription() {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['subscription'] as const,
+    queryFn: () => services.subscription.getSubscription(),
+  });
+}
+
+export function usePremiumFeature(feature: PremiumFeature) {
+  const { data: subscription, ...rest } = useSubscription();
+  const hasAccess = hasPremiumAccess(subscription, feature);
+  return { hasAccess, subscription, ...rest };
+}
+
+/** Dev / mock only: no-op when `setMockTier` is absent (e.g. Supabase registry). */
+export function useSetMockSubscriptionTier() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (tier: SubscriptionTier) => {
+      const fn = services.subscription.setMockTier;
+      if (!fn) {
+        return services.subscription.getSubscription();
+      }
+      return fn(tier);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    },
+  });
 }

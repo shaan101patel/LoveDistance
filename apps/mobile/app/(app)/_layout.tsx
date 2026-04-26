@@ -46,6 +46,10 @@ export default function AppLayout() {
       <Stack.Screen name="wake-check-in" options={{ title: 'Morning check-in' }} />
       <Stack.Screen name="ritual/quick-signal" options={{ title: 'Quick ritual' }} />
       <Stack.Screen name="notifications/index" options={{ title: 'Notifications' }} />
+      <Stack.Screen name="relationship-dashboard" options={{ title: 'Your rhythm' }} />
+      <Stack.Screen name="weekly-recap/select" options={{ title: 'Sunday recap' }} />
+      <Stack.Screen name="weekly-recap/summary" options={{ title: 'Your week together' }} />
+      <Stack.Screen name="plus" options={{ title: 'LoveDistance Plus' }} />
       <Stack.Screen name="design-system" options={{ title: 'Design system', headerShown: false }} />
     </Stack>
   );

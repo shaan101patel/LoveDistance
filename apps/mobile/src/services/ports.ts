@@ -6,14 +6,18 @@ import type {
   MemoryItem,
   NotificationInboxItem,
   NotificationPrefs,
+  RelationshipDashboardSnapshot,
   RitualSignalEntry,
   RitualSignalKind,
+  SubscriptionState,
+  SubscriptionTier,
   TimelineMemoryFilter,
   PrivacySettings,
   PresencePost,
   PromptThread,
   PromptThreadActivity,
   Session,
+  WeeklyRecapDraft,
 } from '@/types/domain';
 
 export type SignInInput = { email: string; password: string };
@@ -126,6 +130,26 @@ export type DeepLinkService = {
   toPath(ref: DeepLinkRef): string;
 };
 
+/** Couple-level insights; mock returns a static snapshot until a real analytics backend exists. */
+export type RelationshipDashboardService = {
+  getSnapshot(): Promise<RelationshipDashboardSnapshot>;
+};
+
+export type WeeklyRecapService = {
+  listPhotoCandidatesForWeek(anchorIso: string): Promise<PresencePost[]>;
+  /** Mock: placeholder highlights. Later: LLM-backed ranking from selected ids + week context. */
+  buildRecapDraft(input: {
+    weekStartYmd: string;
+    selectedPhotoIds: string[];
+  }): Promise<WeeklyRecapDraft>;
+};
+
+export type SubscriptionService = {
+  getSubscription(): Promise<SubscriptionState>;
+  /** Mock-only QA hook; omit in store-backed implementations. */
+  setMockTier?(tier: SubscriptionTier): Promise<SubscriptionState>;
+};
+
 export type ServiceRegistry = {
   auth: AuthService;
   couple: CoupleService;
@@ -140,4 +164,7 @@ export type ServiceRegistry = {
   notificationInbox: NotificationInboxService;
   userSettings: UserSettingsService;
   deepLinks: DeepLinkService;
+  relationshipDashboard: RelationshipDashboardService;
+  weeklyRecap: WeeklyRecapService;
+  subscription: SubscriptionService;
 };

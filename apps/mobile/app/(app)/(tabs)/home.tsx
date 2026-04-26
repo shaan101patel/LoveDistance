@@ -28,7 +28,17 @@ import { spacing } from '@/theme/tokens';
 const quickLinks: { href: Href; label: string; hint: string }[] = [
   { href: '/(app)/(tabs)/photos', label: 'Photos', hint: 'Shared presence' },
   { href: '/(app)/(tabs)/calendar', label: 'Calendar', hint: 'Habits & time' },
-  { href: '/(app)/notifications', label: 'Alerts', hint: 'Notification center (mock)' },
+  {
+    href: '/(app)/relationship-dashboard' as Href,
+    label: 'Rhythm',
+    hint: 'Warm trends from your time together (mock)',
+  },
+  {
+    href: '/(app)/weekly-recap/select' as Href,
+    label: 'Recap',
+    hint: 'Pick up to five photos for your week (mock)',
+  },
+  { href: '/(app)/notifications' as Href, label: 'Alerts', hint: 'Notification center (mock)' },
   { href: '/(app)/(tabs)/settings', label: 'Settings', hint: 'You & the app' },
 ];
 

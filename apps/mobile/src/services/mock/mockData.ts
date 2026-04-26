@@ -9,8 +9,10 @@ import type {
   PrivacySettings,
   PromptThread,
   PromptThreadActivity,
+  RelationshipDashboardSnapshot,
   RitualSignalEntry,
   Session,
+  SubscriptionState,
   UserProfile,
 } from '@/types/domain';
 import { getIsPromptRevealed } from '@/features/prompts/revealLogic';
@@ -70,16 +72,79 @@ export function resetThreadActivityToInitial() {
   mockDb.threadActivity = cloneThreadActivity(initialThreadActivity);
 }
 
+/**
+ * Presence feed seed including Mon–Sun 2026-04-20…2026-04-26 (UTC-stable timestamps) for weekly recap
+ * selection, plus one out-of-week post to verify filtering.
+ */
 export const initialPresencePosts: PresencePost[] = [
   {
-    id: 'photo-1',
+    id: 'photo-recap-mon',
     authorId: mockPartner.id,
     imageUri: 'https://images.unsplash.com/photo-1516589091380-5d8e87df6991?w=600',
-    caption: 'Sunset walk, thinking of you.',
+    caption: 'Monday: quiet coffee before the week spun up.',
     mood: 'soft',
     locationLabel: 'Austin, TX (sample)',
-    createdAt: new Date().toISOString(),
+    createdAt: '2026-04-20T17:00:00.000Z',
+    reactionCount: 1,
+  },
+  {
+    id: 'photo-recap-tue',
+    authorId: mockMe.id,
+    imageUri: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600',
+    caption: 'Tuesday: the corner cafe you always mention.',
+    mood: 'warm',
+    createdAt: '2026-04-21T17:00:00.000Z',
+    reactionCount: 0,
+  },
+  {
+    id: 'photo-recap-wed',
+    authorId: mockPartner.id,
+    imageUri: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600',
+    caption: 'Wednesday: sky looked like your last voice note.',
+    mood: 'soft',
+    createdAt: '2026-04-22T17:00:00.000Z',
     reactionCount: 2,
+  },
+  {
+    id: 'photo-recap-thu',
+    authorId: mockMe.id,
+    imageUri: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600',
+    caption: 'Thursday: train window blur, heading home late.',
+    createdAt: '2026-04-23T17:00:00.000Z',
+    reactionCount: 0,
+  },
+  {
+    id: 'photo-recap-fri',
+    authorId: mockPartner.id,
+    imageUri: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600',
+    caption: 'Friday: takeout and a long call.',
+    mood: 'cozy',
+    createdAt: '2026-04-24T17:00:00.000Z',
+    reactionCount: 3,
+  },
+  {
+    id: 'photo-recap-sat',
+    authorId: mockMe.id,
+    imageUri: 'https://images.unsplash.com/photo-1529333166437-7750a6dd9a70?w=600',
+    caption: 'Saturday: farmers market flowers for the desk.',
+    createdAt: '2026-04-25T17:00:00.000Z',
+    reactionCount: 1,
+  },
+  {
+    id: 'photo-recap-sun',
+    authorId: mockPartner.id,
+    imageUri: 'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=600',
+    caption: 'Sunday: golden hour on the balcony.',
+    createdAt: '2026-04-26T17:00:00.000Z',
+    reactionCount: 2,
+  },
+  {
+    id: 'photo-out-of-week',
+    authorId: mockPartner.id,
+    imageUri: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=600',
+    caption: 'Older moment — should not appear in this week’s recap picker.',
+    createdAt: '2026-04-10T17:00:00.000Z',
+    reactionCount: 0,
   },
 ];
 
@@ -324,6 +389,12 @@ export const initialAppLock: AppLockSettings = {
   isPasscodeSet: false,
 };
 
+export const initialSubscription: SubscriptionState = {
+  tier: 'free',
+  renewsAtIso: null,
+  source: 'mock',
+};
+
 export const initialRitualSignals: RitualSignalEntry[] = [];
 
 /** Issued invite token from createInviteLink; acceptInvite must match (mock-only). */
@@ -347,6 +418,7 @@ type MockDatabase = {
   appLock: AppLockSettings;
   ritualSignals: RitualSignalEntry[];
   notificationInbox: NotificationInboxItem[];
+  subscription: SubscriptionState;
 };
 
 export const mockDb: MockDatabase = {
@@ -363,6 +435,7 @@ export const mockDb: MockDatabase = {
   appLock: { ...initialAppLock },
   ritualSignals: [...initialRitualSignals],
   notificationInbox: initialNotificationInbox.map((n) => ({ ...n })),
+  subscription: { ...initialSubscription },
 };
 
 export function refreshRevealState() {
@@ -399,3 +472,62 @@ export function upsertPromptPhotoFusionMemory(): void {
   };
   mockDb.memories = [row, ...mockDb.memories];
 }
+
+/** Static couple “insights” for the emotional dashboard (mock only). */
+export const mockRelationshipDashboardSnapshot: RelationshipDashboardSnapshot = {
+  generatedAt: '2026-01-15T12:00:00.000Z',
+  headline: 'You two have been showing up for each other—gently, often, and in your own rhythm.',
+  promptRhythm: {
+    insight:
+      'Most weeks you both touched the daily prompt, even on busy days. That steadiness matters more than a perfect streak.',
+    weeks: [
+      { weekLabel: 'Nov 1', bothEngagedScore: 0.72 },
+      { weekLabel: 'Nov 2', bothEngagedScore: 0.85 },
+      { weekLabel: 'Nov 3', bothEngagedScore: 0.68 },
+      { weekLabel: 'Nov 4', bothEngagedScore: 0.9 },
+      { weekLabel: 'Dec 1', bothEngagedScore: 0.78 },
+      { weekLabel: 'Dec 2', bothEngagedScore: 0.82 },
+      { weekLabel: 'Dec 3', bothEngagedScore: 0.88 },
+      { weekLabel: 'Jan 1', bothEngagedScore: 0.91 },
+    ],
+  },
+  gratitude: {
+    insight:
+      'Little notes of thanks kept appearing—small sentences that make the distance feel shorter.',
+    weekLabels: ['Nov wk 1', 'Nov wk 2', 'Dec wk 1', 'Dec wk 2', 'Jan wk 1'],
+    entriesPerWeek: [2, 4, 3, 5, 4],
+  },
+  favoriteCategories: {
+    insight:
+      'Your threads leaned toward tender, everyday moments—less “big announcements,” more “I’m thinking of you.”',
+    items: [
+      { label: 'Little joys', share: 0.28 },
+      { label: 'Plans together', share: 0.24 },
+      { label: 'Hard days & comfort', share: 0.2 },
+      { label: 'Gratitude & appreciation', share: 0.18 },
+      { label: 'Playful check-ins', share: 0.1 },
+    ],
+  },
+  savedMemories: {
+    insight:
+      'You tucked away milestones and quiet wins alike—enough to scroll back on a tough night and feel held.',
+    totalCount: 24,
+    highlights: [
+      {
+        id: 'memory-milestone-1',
+        title: '100 days together in the LDR',
+        savedAtLabel: 'Dec 2025',
+      },
+      {
+        id: 'memory-gratitude-1',
+        title: 'Gratitude: small kindness',
+        savedAtLabel: 'Dec 2025',
+      },
+      {
+        id: 'memory-1',
+        title: 'First unlocked daily prompt',
+        savedAtLabel: 'Dec 2025',
+      },
+    ],
+  },
+};

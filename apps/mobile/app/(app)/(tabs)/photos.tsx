@@ -19,6 +19,7 @@ import type { PresencePost } from '@/types/domain';
 import { spacing } from '@/theme/tokens';
 
 const composeHref = '/(app)/photo/compose' as Href;
+const recapSelectHref = '/(app)/weekly-recap/select' as Href;
 const GAP = spacing.lg;
 
 export default function PhotosTabScreen() {
@@ -55,10 +56,14 @@ export default function PhotosTabScreen() {
   const listHeader = useCallback(
     () => (
       <View style={styles.startRow}>
-        <Button
-          label="Add photo"
-          onPress={() => router.push(composeHref)}
-        />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+          <Button label="Add photo" onPress={() => router.push(composeHref)} />
+          <Button
+            label="Sunday recap"
+            variant="secondary"
+            onPress={() => router.push(recapSelectHref)}
+          />
+        </View>
       </View>
     ),
     [router],
