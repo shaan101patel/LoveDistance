@@ -1,0 +1,22 @@
+---
+description: LoveDistance project context and build strategy
+alwaysApply: true
+---
+
+This repo builds LoveDistance, a mobile-first app for long-distance couples.
+
+Before planning or implementing features, consult:
+- docs/product/01-product-brief.md
+- docs/product/02-feature-spec.md
+- docs/product/03-user-flows.md
+- docs/product/04-backend-strategy.md
+- docs/product/05-build-priorities.md
+- docs/product/06-cursor-handoff.md
+
+Important rules:
+- Build frontend first.
+- Use mock data and mock services in the first implementation pass.
+- Do not lock in a final backend schema yet.
+- Supabase will be the backend platform for auth, database, storage, realtime, and edge/server logic later.
+- Keep service boundaries clean so mock services can be replaced by Supabase integrations later.
+- Prefer small MVP vertical slices over broad implementation.

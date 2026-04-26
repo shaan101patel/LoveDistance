@@ -1,0 +1,11 @@
+appId: com.lovedistance.mobile
+---
+- launchApp
+- tapOn: 'First name'
+- inputText: 'Shaan'
+- tapOn: 'Continue'
+- tapOn: 'Accept partner invite (mock)'
+- tapOn: 'Prompt answer'
+- inputText: 'Today I felt close when we laughed.'
+- tapOn: 'Submit answer'
+- assertVisible: 'Thread unlocked'

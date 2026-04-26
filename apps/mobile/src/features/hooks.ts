@@ -1,0 +1,103 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { useServices } from '@/services/ServiceContext';
+
+export function useTodayPrompt() {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['prompt', 'today'],
+    queryFn: () => services.prompt.getTodayPrompt(),
+  });
+}
+
+export function useSubmitPrompt() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ promptId, answer }: { promptId: string; answer: string }) =>
+      services.prompt.submitPromptAnswer(promptId, answer),
+    onSuccess: (next) => {
+      queryClient.setQueryData(['prompt', 'today'], next);
+      queryClient.invalidateQueries({ queryKey: ['timeline'] });
+    },
+  });
+}
+
+export function usePromptReaction() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ promptId, emoji }: { promptId: string; emoji: string }) =>
+      services.prompt.reactToPrompt(promptId, emoji),
+    onSuccess: (next) => {
+      queryClient.setQueryData(['prompt', 'today'], next);
+    },
+  });
+}
+
+export function usePresenceFeed() {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['presence', 'feed'],
+    queryFn: () => services.presence.getLatestPosts(),
+  });
+}
+
+export function useSharePresence() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { imageUri: string; caption?: string; mood?: string }) =>
+      services.presence.sharePost(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['presence', 'feed'] });
+      queryClient.invalidateQueries({ queryKey: ['timeline'] });
+    },
+  });
+}
+
+export function useHabits(month: string) {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['habits', month],
+    queryFn: () => services.habits.getHabitsForMonth(month),
+  });
+}
+
+export function useToggleHabit(month: string) {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ habitId, date }: { habitId: string; date: string }) =>
+      services.habits.toggleHabitCompletion(habitId, date),
+    onSuccess: (next) => {
+      queryClient.setQueryData(['habits', month], next);
+    },
+  });
+}
+
+export function useTimeline(
+  filter: 'all' | 'prompt' | 'photo' | 'gratitude' | 'milestone' = 'all',
+) {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['timeline', filter],
+    queryFn: () => services.timeline.listMemories(filter),
+  });
+}
+
+export function useNotificationPreferences() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: ['notifications', 'prefs'],
+    queryFn: () => services.notificationPrefs.getPreferences(),
+  });
+  const mutation = useMutation({
+    mutationFn: services.notificationPrefs.updatePreferences,
+    onSuccess: (next) => {
+      queryClient.setQueryData(['notifications', 'prefs'], next);
+    },
+  });
+  return { query, mutation };
+}
