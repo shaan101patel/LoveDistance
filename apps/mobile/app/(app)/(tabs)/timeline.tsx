@@ -1,30 +1,87 @@
-import { Link } from 'expo-router';
-import { Text } from 'react-native';
+import { useCallback } from 'react';
+import { ActivityIndicator, FlatList, type ListRenderItem, RefreshControl, View } from 'react-native';
 
-import { EmptyState } from '@/components/primitives';
+import { TimelineMemoryRow } from '@/components/timeline';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
-import { SectionCard } from '@/components/ui';
+import { Body } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
+import { useTimeline } from '@/features/hooks';
+import type { MemoryItem } from '@/types/domain';
+import { spacing } from '@/theme/tokens';
+
+import { Button } from '@/components/primitives/Button';
 
 export default function TimelineScreen() {
   const theme = useTheme();
+  const { data: memories, isLoading, isError, isRefetching, refetch } = useTimeline('all');
+
+  const renderItem: ListRenderItem<MemoryItem> = useCallback(
+    ({ item, index }) => (
+      <View style={index > 0 ? { marginTop: spacing.md } : undefined}>
+        <TimelineMemoryRow item={item} />
+      </View>
+    ),
+    [],
+  );
+
+  if (isLoading) {
+    return (
+      <SectionScaffold
+        kicker="Together"
+        lead="Prompts, photos, and moments in one place—local mock data until the backend is wired."
+        title="Timeline"
+      >
+        <ActivityIndicator color={theme.colors.primary} size="large" />
+        <Body>Loading your story…</Body>
+      </SectionScaffold>
+    );
+  }
+
+  if (isError) {
+    return (
+      <SectionScaffold
+        kicker="Together"
+        lead="Prompts, photos, and moments in one place—local mock data until the backend is wired."
+        title="Timeline"
+      >
+        <Body>Couldn’t load the timeline.</Body>
+        <View style={{ marginTop: spacing.md, alignSelf: 'flex-start' as const }}>
+          <Button
+            label="Try again"
+            onPress={() => {
+              void refetch();
+            }}
+          />
+        </View>
+      </SectionScaffold>
+    );
+  }
+
   return (
     <SectionScaffold
       kicker="Together"
-      lead="Prompts, photos, gratitude, and milestones in one scrollable story — filters and search come next."
+      lead="Prompts, photos, and moments in one place—local mock data until the backend is wired."
+      scrollable={false}
       title="Timeline"
     >
-      <SectionCard>
-        <EmptyState
-          title="Your story starts with the first shared moment"
-          description="Nothing here yet. As you answer prompts and share photos, this line will fill in."
-        />
-        <Link href="/(app)/memory/memory-placeholder">
-          <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>
-            Open memory detail placeholder
-          </Text>
-        </Link>
-      </SectionCard>
+      <FlatList
+        data={memories ?? []}
+        keyExtractor={(m) => m.id}
+        ListEmptyComponent={
+          <Body>Nothing here yet. Answer a prompt (with an optional photo) or share to the feed to see entries.</Body>
+        }
+        refreshControl={
+          <RefreshControl
+            onRefresh={() => {
+              void refetch();
+            }}
+            refreshing={isRefetching}
+            tintColor={theme.colors.primary}
+          />
+        }
+        renderItem={renderItem}
+        style={{ flex: 1, width: '100%' as const, alignSelf: 'stretch' as const }}
+      />
     </SectionScaffold>
   );
 }

@@ -1,4 +1,4 @@
-import { mockDb, mockPartner, refreshRevealState } from '@/services/mock/mockData';
+import { mockDb, mockPartner, refreshRevealState, upsertPromptPhotoFusionMemory } from '@/services/mock/mockData';
 
 /**
  * Mock-only: append partner's answer so a single device can reach unlocked state.
@@ -12,8 +12,10 @@ export function devSimulatePartnerTodayAnswer(): void {
     userId: mockPartner.id,
     answer: 'I felt close when we laughed on the call last night.',
     submittedAt: new Date().toISOString(),
+    imageUri: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400',
   });
   refreshRevealState();
+  upsertPromptPhotoFusionMemory();
 }
 
 /**

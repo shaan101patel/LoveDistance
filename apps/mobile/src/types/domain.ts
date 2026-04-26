@@ -21,6 +21,8 @@ export type PromptAnswer = {
   userId: string;
   answer: string;
   submittedAt: string;
+  /** Optional local file URI or remote URL attached to the answer (mock + future upload). */
+  imageUri?: string;
 };
 
 export type PromptThreadCategory = {
@@ -80,6 +82,8 @@ export type PresencePost = {
   imageUri: string;
   caption?: string;
   mood?: string;
+  /** Free-text place name (e.g. city), not a live GPS pin in mock mode. */
+  locationLabel?: string;
   createdAt: string;
   reactionCount: number;
 };
@@ -104,6 +108,8 @@ export type MemoryItem = {
   createdAt: string;
   deepLinkRef: string;
   isFavorite: boolean;
+  /** Timeline thumbnail (e.g. prompt answer with photo). */
+  imageUri?: string;
 };
 
 export type NotificationPrefs = {

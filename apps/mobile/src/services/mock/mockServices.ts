@@ -10,6 +10,7 @@ import {
   mockPartner,
   refreshRevealState,
   resetThreadActivityToInitial,
+  upsertPromptPhotoFusionMemory,
 } from '@/services/mock/mockData';
 import { getPathFromRef, parseDeepLink } from '@/lib/deepLinking/deepLinkService';
 
@@ -44,6 +45,19 @@ function buildSessionFromUser(user: UserProfile): Session {
 /** Matches tokens produced by createInviteLink (also accepted on a fresh mock DB for two-device testing). */
 function isMockStyleInviteToken(token: string): boolean {
   return /^inv-[a-z0-9]+-[a-z0-9]+$/i.test(token) && token.length >= 8;
+}
+
+const FOLLOW_UP_SUGGESTIONS = [
+  'What was going through your mind in that moment?',
+  'I love that you shared this—what do you want to do more of together?',
+  'Should we make this a new little tradition for us?',
+];
+
+function suggestFollowUpsRotated(
+  input: { imageUri: string; promptQuestion: string; partnerName?: string },
+): string[] {
+  const n = (input.imageUri.length + input.promptQuestion.length) % FOLLOW_UP_SUGGESTIONS.length;
+  return [0, 1, 2].map((i) => FOLLOW_UP_SUGGESTIONS[(n + i) % FOLLOW_UP_SUGGESTIONS.length]);
 }
 
 export const mockServices: ServiceRegistry = {
@@ -166,20 +180,30 @@ export const mockServices: ServiceRegistry = {
       }
       return withLatency({ ...mockDb.prompt });
     },
-    async submitPromptAnswer(promptId, answer) {
-      const existing = mockDb.prompt.answers.find(
-        (item) => item.userId === (mockDb.session?.user.id ?? mockMe.id),
-      );
+    async submitPromptAnswer(promptId, input) {
+      const text = input.answer.trim();
+      const userId = mockDb.session?.user.id ?? mockMe.id;
+      const existing = mockDb.prompt.answers.find((item) => item.userId === userId);
       if (existing) {
-        existing.answer = answer;
+        existing.answer = text;
+        if (input.imageUri) {
+          existing.imageUri = input.imageUri;
+        } else {
+          delete existing.imageUri;
+        }
       } else {
-        mockDb.prompt.answers.push({
-          userId: mockDb.session?.user.id ?? mockMe.id,
-          answer,
+        const row: (typeof mockDb.prompt.answers)[number] = {
+          userId,
+          answer: text,
           submittedAt: new Date().toISOString(),
-        });
+        };
+        if (input.imageUri) {
+          row.imageUri = input.imageUri;
+        }
+        mockDb.prompt.answers.push(row);
       }
       refreshRevealState();
+      upsertPromptPhotoFusionMemory();
       if (promptId !== mockDb.prompt.promptId) {
         throw new Error('Prompt id mismatch in mock service.');
       }
@@ -261,15 +285,22 @@ export const mockServices: ServiceRegistry = {
   },
   presence: {
     async getLatestPosts() {
-      return withLatency([...mockDb.posts]);
+      const sorted = [...mockDb.posts].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      return withLatency(sorted);
     },
     async sharePost(input) {
+      const caption = input.caption?.trim() || undefined;
+      const mood = input.mood?.trim() || undefined;
+      const locationLabel = input.locationLabel?.trim() || undefined;
       const post = {
         id: `photo-${Date.now()}`,
         authorId: mockDb.session?.user.id ?? mockMe.id,
         imageUri: input.imageUri,
-        caption: input.caption,
-        mood: input.mood,
+        caption,
+        mood,
+        locationLabel,
         createdAt: new Date().toISOString(),
         reactionCount: 0,
       };
@@ -310,13 +341,21 @@ export const mockServices: ServiceRegistry = {
   },
   timeline: {
     async listMemories(filter = 'all') {
-      const list =
+      const base =
         filter === 'all' ? mockDb.memories : mockDb.memories.filter((item) => item.type === filter);
-      return withLatency([...list]);
+      const sorted = [...base].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      return withLatency(sorted);
     },
     async getMemoryById(memoryId) {
       const found = mockDb.memories.find((item) => item.id === memoryId) ?? null;
       return withLatency(found);
+    },
+  },
+  followUpSuggestions: {
+    async suggestForReceivedPhoto(input) {
+      return withLatency(suggestFollowUpsRotated(input));
     },
   },
   notificationPrefs: {

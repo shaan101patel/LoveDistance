@@ -52,6 +52,9 @@ export const supabaseServices: ServiceRegistry = {
     listMemories: () => notReady('timeline.listMemories'),
     getMemoryById: () => notReady('timeline.getMemoryById'),
   },
+  followUpSuggestions: {
+    suggestForReceivedPhoto: () => notReady('followUpSuggestions.suggestForReceivedPhoto'),
+  },
   notificationPrefs: {
     getPreferences: () => notReady('notificationPrefs.getPreferences'),
     updatePreferences: () => notReady('notificationPrefs.updatePreferences'),

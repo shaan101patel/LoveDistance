@@ -11,6 +11,7 @@ import {
 
 import {
   PartnerAnswerPanel,
+  PhotoFollowUpSuggestions,
   PromptAnswerComposer,
   PromptCategoryChip,
   ThreadReactionBar,
@@ -19,7 +20,6 @@ import {
   UnlockedAnswerCard,
   VoiceNotePlaceholderCard,
 } from '@/components/prompt';
-import { Card } from '@/components/primitives/Card';
 import { Body, Heading, SectionCard, Screen } from '@/components/ui';
 import {
   useAddThreadReply,
@@ -57,6 +57,7 @@ export default function PromptThreadScreen() {
   const addThreadReply = useAddThreadReply();
   const threadReplyReact = useReactToThreadReply();
   const [replyParentId, setReplyParentId] = useState<string | null>(null);
+  const [replyInject, setReplyInject] = useState<{ rev: number; text: string }>({ rev: 0, text: '' });
 
   const partner = couple?.partner;
   const partnerId = partner?.id;
@@ -89,7 +90,6 @@ export default function PromptThreadScreen() {
         center: { flex: 1, justifyContent: 'center' as const, padding: spacing.lg, gap: spacing.md },
         back: { color: theme.colors.primary, fontWeight: '600' as const, fontSize: 16, marginTop: spacing.md },
         myLabel: { ...theme.type.caption, color: theme.colors.textMuted, marginBottom: spacing.xs },
-        myBody: { ...theme.type.body, color: theme.colors.textPrimary },
       }),
     [theme],
   );
@@ -193,14 +193,26 @@ export default function PromptThreadScreen() {
           <>
             <UnlockedAnswerCard
               heading="You"
+              imageUri={vm.myAnswer.imageUri}
               submittedAt={vm.myAnswer.submittedAt}
               text={vm.myAnswer.answer}
             />
             <UnlockedAnswerCard
               heading={partnerName}
+              imageUri={vm.partnerAnswer.imageUri}
               submittedAt={vm.partnerAnswer.submittedAt}
               text={vm.partnerAnswer.answer}
             />
+            {vm.partnerAnswer.imageUri ? (
+              <PhotoFollowUpSuggestions
+                imageUri={vm.partnerAnswer.imageUri}
+                partnerName={partnerName}
+                promptQuestion={vm.question}
+                onSelectLine={(line) => {
+                  setReplyInject((s) => ({ rev: s.rev + 1, text: line }));
+                }}
+              />
+            ) : null}
             <SectionCard>
               <ThreadReactionBar
                 isPending={promptReaction.isPending}
@@ -241,6 +253,8 @@ export default function PromptThreadScreen() {
                     <ThreadReplyComposer
                       isSubmitting={addThreadReply.isPending}
                       parentReplyId={replyParentId}
+                      prefillRevision={replyInject.rev}
+                      prefillText={replyInject.text}
                       onClearParent={() => setReplyParentId(null)}
                       onSubmit={(body, parentId) => {
                         addThreadReply.mutate(
@@ -266,7 +280,9 @@ export default function PromptThreadScreen() {
               <Text style={styles.myLabel}>Your answer</Text>
               <PromptAnswerComposer
                 isSubmitting={submit.isPending}
-                onSubmit={(answer) => submit.mutate({ promptId: vm.promptId, answer })}
+                onSubmit={({ answer, imageUri: uri }) =>
+                  submit.mutate({ promptId: vm.promptId, answer, imageUri: uri })
+                }
               />
             </SectionCard>
             <PartnerAnswerPanel
@@ -278,10 +294,12 @@ export default function PromptThreadScreen() {
 
         {vm.phase === 'awaitingPartner' ? (
           <>
-            <Card elevated={false} style={{ gap: 0 }}>
-              <Text style={styles.myLabel}>You</Text>
-              <Text style={styles.myBody}>{vm.myAnswer.answer}</Text>
-            </Card>
+            <UnlockedAnswerCard
+              heading="You"
+              imageUri={vm.myAnswer.imageUri}
+              submittedAt={vm.myAnswer.submittedAt}
+              text={vm.myAnswer.answer}
+            />
             <PartnerAnswerPanel
               row={vm.partnerRow}
               title={partnerName === 'Partner' ? "Partner's space" : `${partnerName}’s answer`}

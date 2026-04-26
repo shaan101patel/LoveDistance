@@ -4,6 +4,7 @@ const promptAnswerSchema = z.object({
   userId: z.string().min(1),
   answer: z.string().min(1),
   submittedAt: z.string().min(1),
+  imageUri: z.string().min(1).optional(),
 });
 
 export const promptThreadSchema = z.object({

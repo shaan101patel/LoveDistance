@@ -75,6 +75,7 @@ export const initialPresencePosts: PresencePost[] = [
     imageUri: 'https://images.unsplash.com/photo-1516589091380-5d8e87df6991?w=600',
     caption: 'Sunset walk, thinking of you.',
     mood: 'soft',
+    locationLabel: 'Austin, TX (sample)',
     createdAt: new Date().toISOString(),
     reactionCount: 2,
   },
@@ -174,4 +175,35 @@ export const mockDb: MockDatabase = {
 
 export function refreshRevealState() {
   mockDb.prompt.isRevealed = getIsPromptRevealed(mockDb.prompt.answers);
+}
+
+/**
+ * When any answer includes a photo, keep a single fused `MemoryItem` for the timeline; otherwise remove it.
+ */
+export function upsertPromptPhotoFusionMemory(): void {
+  const t = mockDb.prompt;
+  const fusionId = `memory-fusion-${t.promptId}`;
+  mockDb.memories = mockDb.memories.filter((m) => m.id !== fusionId);
+  const withPhoto = [...t.answers]
+    .filter((a) => a.imageUri)
+    .sort(
+      (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
+    )[0];
+  if (!withPhoto) {
+    return;
+  }
+  const title = t.question.length > 60 ? `${t.question.slice(0, 57)}…` : t.question;
+  const summary =
+    withPhoto.answer.length > 120 ? `${withPhoto.answer.slice(0, 117)}…` : withPhoto.answer;
+  const row: MemoryItem = {
+    id: fusionId,
+    type: 'prompt',
+    title,
+    summary,
+    createdAt: withPhoto.submittedAt,
+    deepLinkRef: `prompt:${t.promptId}`,
+    isFavorite: false,
+    imageUri: withPhoto.imageUri!,
+  };
+  mockDb.memories = [row, ...mockDb.memories];
 }

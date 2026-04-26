@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/primitives/Card';
+import { PromptAnswerMoment } from '@/components/prompt/PromptAnswerMoment';
 import type { PartnerRowModel } from '@/features/prompts/threadViewModel';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
@@ -88,46 +89,30 @@ export function PartnerAnswerPanel({ row, title }: Props) {
 
   return (
     <View>
-      <Text style={styles.sectionLabel}>{title}</Text>
-      <Text style={styles.body}>{row.text}</Text>
-      <Text style={styles.meta}>
-        {new Date(row.submittedAt).toLocaleString(undefined, {
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-        })}
-      </Text>
+      <PromptAnswerMoment
+        heading={title}
+        imageUri={row.imageUri}
+        submittedAt={row.submittedAt}
+        text={row.text}
+      />
     </View>
   );
 }
 
 type AnswerCardProps = { heading: string; text: string; submittedAt: string };
 
+type UnlockedCardProps = AnswerCardProps & { imageUri?: string };
+
 /** Full answer display once the thread is unlocked. */
-export function UnlockedAnswerCard({ heading, text, submittedAt }: AnswerCardProps) {
-  const theme = useTheme();
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        label: { ...theme.type.caption, color: theme.colors.textMuted, marginBottom: spacing.xs },
-        body: { ...theme.type.body, color: theme.colors.textPrimary },
-        meta: { ...theme.type.caption, color: theme.colors.textMuted, marginTop: spacing.sm },
-      }),
-    [theme],
-  );
+export function UnlockedAnswerCard({ heading, text, submittedAt, imageUri }: UnlockedCardProps) {
   return (
     <Card elevated={false} style={{ gap: 0 }}>
-      <Text style={styles.label}>{heading}</Text>
-      <Text style={styles.body}>{text}</Text>
-      <Text style={styles.meta}>
-        {new Date(submittedAt).toLocaleString(undefined, {
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-        })}
-      </Text>
+      <PromptAnswerMoment
+        heading={heading}
+        imageUri={imageUri}
+        submittedAt={submittedAt}
+        text={text}
+      />
     </Card>
   );
 }

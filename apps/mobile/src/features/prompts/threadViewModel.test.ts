@@ -105,4 +105,49 @@ describe('buildPromptThreadViewModel', () => {
     expect(vm.partnerAnswer.answer).toBe('B');
     expect(vm.myAnswer.answer).toBe('A');
   });
+
+  it('unlocked includes optional imageUri on answers', () => {
+    const t: PromptThread = {
+      ...base(),
+      isRevealed: true,
+      answers: [
+        { userId: meId, answer: 'A', submittedAt: '1' },
+        {
+          userId: partnerId,
+          answer: 'B',
+          submittedAt: '2',
+          imageUri: 'https://example.com/p.jpg',
+        },
+      ],
+    };
+    const vm = buildPromptThreadViewModel({ thread: t, meId, partnerId, partnerFirstName: name });
+    expect(vm.phase).toBe('unlocked');
+    if (vm.phase !== 'unlocked') {
+      return;
+    }
+    expect(vm.partnerAnswer.imageUri).toBe('https://example.com/p.jpg');
+  });
+
+  it('visible partner row passes imageUri when revealed', () => {
+    const t: PromptThread = {
+      ...base(),
+      isRevealed: true,
+      answers: [
+        { userId: meId, answer: 'A', submittedAt: '1' },
+        {
+          userId: partnerId,
+          answer: 'B',
+          submittedAt: '2',
+          imageUri: 'file:///local.jpg',
+        },
+      ],
+    };
+    const vm = buildPromptThreadViewModel({ thread: t, meId, partnerId, partnerFirstName: name });
+    expect(vm.phase).toBe('unlocked');
+    if (vm.phase !== 'unlocked') {
+      return;
+    }
+    // Partner row in unlocked is not used as PartnerRowModel—partnerAnswer carries imageUri.
+    expect(vm.partnerAnswer.imageUri).toBe('file:///local.jpg');
+  });
 });

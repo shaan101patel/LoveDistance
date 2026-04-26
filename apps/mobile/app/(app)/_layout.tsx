@@ -40,6 +40,7 @@ export default function AppLayout() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="prompt/[promptId]" options={{ title: 'Prompt thread' }} />
       <Stack.Screen name="memory/[memoryId]" options={{ title: 'Memory' }} />
+      <Stack.Screen name="photo/compose" options={{ title: 'New photo' }} />
       <Stack.Screen name="photo/[photoId]" options={{ title: 'Photo' }} />
       <Stack.Screen name="habit/[habitId]" options={{ title: 'Habit' }} />
       <Stack.Screen name="design-system" options={{ title: 'Design system', headerShown: false }} />

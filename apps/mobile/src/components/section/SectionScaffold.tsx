@@ -11,6 +11,11 @@ type Props = PropsWithChildren<{
   /** Short supporting line; optional extra node under it */
   lead?: string;
   footer?: ReactNode;
+  /**
+   * When false, outer shell is a View (use when children include a list that scrolls,
+   * e.g. FlatList, to avoid nested scroll views).
+   */
+  scrollable?: boolean;
 }>;
 
 const MAX_CONTENT_WIDTH = 600;
@@ -18,34 +23,61 @@ const MAX_CONTENT_WIDTH = 600;
 /**
  * Polished section shell: scrollable, responsive max width, consistent spacing.
  */
-export function SectionScaffold({ kicker, title, lead, footer, children }: Props) {
+export function SectionScaffold({ kicker, title, lead, footer, children, scrollable = true }: Props) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const contentW =
     width >= MAX_CONTENT_WIDTH + spacing.lg * 2 ? MAX_CONTENT_WIDTH : width - spacing.lg * 2;
 
+  const header = (
+    <View style={{ gap: spacing.xs }}>
+      <Body>{kicker}</Body>
+      <Heading>{title}</Heading>
+      {lead ? <Body>{lead}</Body> : null}
+    </View>
+  );
+
+  const inner = (
+    <View
+      style={{
+        width: contentW,
+        maxWidth: '100%' as const,
+        gap: spacing.md,
+        paddingTop: spacing.sm,
+        flex: scrollable ? undefined : 1,
+      }}
+    >
+      {header}
+      {children}
+      {footer ? <View style={{ marginTop: spacing.lg }}>{footer}</View> : null}
+    </View>
+  );
+
   return (
     <Screen padded={false}>
-      <ScrollView
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + spacing.xxxl,
-          paddingHorizontal: spacing.lg,
-          alignItems: 'center',
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View
-          style={{ width: contentW, maxWidth: '100%', gap: spacing.md, paddingTop: spacing.sm }}
+      {scrollable ? (
+        <ScrollView
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + spacing.xxxl,
+            paddingHorizontal: spacing.lg,
+            alignItems: 'center',
+          }}
+          showsVerticalScrollIndicator={false}
         >
-          <View style={{ gap: spacing.xs }}>
-            <Body>{kicker}</Body>
-            <Heading>{title}</Heading>
-            {lead ? <Body>{lead}</Body> : null}
-          </View>
-          {children}
-          {footer ? <View style={{ marginTop: spacing.lg }}>{footer}</View> : null}
+          {inner}
+        </ScrollView>
+      ) : (
+        <View
+          style={{
+            flex: 1,
+            paddingHorizontal: spacing.lg,
+            alignItems: 'center',
+            paddingBottom: insets.bottom,
+          }}
+        >
+          {inner}
         </View>
-      </ScrollView>
+      )}
     </Screen>
   );
 }

@@ -3,7 +3,7 @@ import type { PromptAnswer, PromptThread, PromptThreadCategory } from '@/types/d
 export type PartnerRowModel =
   | { kind: 'waiting'; partnerFirstName: string }
   | { kind: 'obscured' }
-  | { kind: 'visible'; text: string; submittedAt: string };
+  | { kind: 'visible'; text: string; submittedAt: string; imageUri?: string };
 
 export type PromptThreadViewModel =
   | {
@@ -54,6 +54,7 @@ function buildPartnerRow(
       kind: 'visible',
       text: pAns.answer,
       submittedAt: pAns.submittedAt,
+      imageUri: pAns.imageUri,
     };
   }
   if (pAns && !thread.isRevealed) {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/primitives/Button';
@@ -12,6 +12,9 @@ type Props = {
   isSubmitting: boolean;
   parentReplyId: string | null;
   onClearParent: () => void;
+  /** When revision increments, `prefillText` replaces the field (e.g. suggestion chip). */
+  prefillRevision?: number;
+  prefillText?: string;
 };
 
 /**
@@ -22,9 +25,18 @@ export function ThreadReplyComposer({
   isSubmitting,
   parentReplyId,
   onClearParent,
+  prefillRevision = 0,
+  prefillText = '',
 }: Props) {
   const theme = useTheme();
   const [text, setText] = useState('');
+
+  useEffect(() => {
+    if (prefillRevision > 0 && prefillText) {
+      setText(prefillText);
+    }
+  }, [prefillRevision, prefillText]);
+
   const styles = useMemo(
     () =>
       StyleSheet.create({

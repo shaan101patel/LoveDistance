@@ -114,12 +114,6 @@ function buildPlaceholderActivity(partnerFirstName: string): HomeFeedViewModel['
         subtitle: '“Thinking of you this morning.”',
       },
       {
-        id: 'photo',
-        faIcon: 'image',
-        title: 'Shared photo (sample)',
-        subtitle: 'Sunset from the walk—yesterday',
-      },
-      {
         id: 'prompt',
         faIcon: 'heart',
         title: 'Streaks build here (sample)',

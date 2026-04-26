@@ -32,12 +32,22 @@ export type CoupleService = {
   acceptInvite(token: string): Promise<CoupleProfile>;
 };
 
+export type SubmitPromptAnswerInput = { answer: string; imageUri: string | null };
+
 export type PromptService = {
   getTodayPrompt(): Promise<PromptThread>;
   /** Thread screen read path; return null if no prompt with this id. */
   getPromptById(promptId: string): Promise<PromptThread | null>;
-  submitPromptAnswer(promptId: string, answer: string): Promise<PromptThread>;
+  submitPromptAnswer(promptId: string, input: SubmitPromptAnswerInput): Promise<PromptThread>;
   reactToPrompt(promptId: string, emoji: string): Promise<PromptThread>;
+};
+
+export type FollowUpSuggestionService = {
+  suggestForReceivedPhoto(input: {
+    imageUri: string;
+    promptQuestion: string;
+    partnerName?: string;
+  }): Promise<string[]>;
 };
 
 export type AddThreadReplyInput = {
@@ -61,7 +71,12 @@ export type ThreadInteractionService = {
 
 export type PresenceService = {
   getLatestPosts(): Promise<PresencePost[]>;
-  sharePost(input: { imageUri: string; caption?: string; mood?: string }): Promise<PresencePost>;
+  sharePost(input: {
+    imageUri: string;
+    caption?: string;
+    mood?: string;
+    locationLabel?: string;
+  }): Promise<PresencePost>;
   reactToPost(postId: string): Promise<void>;
 };
 
@@ -101,6 +116,7 @@ export type ServiceRegistry = {
   presence: PresenceService;
   habits: HabitService;
   timeline: TimelineService;
+  followUpSuggestions: FollowUpSuggestionService;
   notificationPrefs: NotificationPrefsService;
   userSettings: UserSettingsService;
   deepLinks: DeepLinkService;

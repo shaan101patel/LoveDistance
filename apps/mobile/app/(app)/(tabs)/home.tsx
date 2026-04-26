@@ -6,12 +6,13 @@ import { Pressable, Text, View } from 'react-native';
 import { Card } from '@/components/primitives';
 import {
   DailyPromptCard,
+  LatestSharedPhotoBlock,
   PartnerActivitySection,
   StreakPreviewPlaceholder,
 } from '@/components/home';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
-import { useCouple, useCurrentUserId, useTodayPrompt } from '@/features/hooks';
+import { useCouple, useCurrentUserId, usePresenceFeed, useTodayPrompt } from '@/features/hooks';
 import { composeHomeFeed } from '@/features/home/homeFeedComposer';
 import {
   devSimulatePartnerTodayAnswer,
@@ -31,6 +32,7 @@ export default function HomeScreen() {
   const queryClient = useQueryClient();
   const { data: couple, isLoading: coupleLoading } = useCouple();
   const { data: thread, isLoading: promptLoading, isError: promptError } = useTodayPrompt();
+  const { data: presencePosts } = usePresenceFeed();
   const { meId, isSessionLoading: sessionUserLoading } = useCurrentUserId();
   const partner = couple?.partner;
   const reunion = couple?.reunionDate
@@ -89,6 +91,13 @@ export default function HomeScreen() {
           ) : homeFeed && thread && meId ? (
             <View style={{ gap: spacing.lg }}>
               <DailyPromptCard daily={homeFeed.daily} />
+              {presencePosts?.[0] ? (
+                <LatestSharedPhotoBlock
+                  meId={meId}
+                  partnerFirstName={partner.firstName}
+                  post={presencePosts[0]}
+                />
+              ) : null}
               <PartnerActivitySection model={homeFeed.partnerActivity} />
               <StreakPreviewPlaceholder model={homeFeed.streak} />
             </View>

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useServices } from '@/services/ServiceContext';
-import type { CoupleProfile } from '@/types/domain';
+import type { CoupleProfile, PresencePost } from '@/types/domain';
 
 /** Couple space for the signed-in user; null when unpaired. Invalidated after pairing / sign-out flows. */
 export function useCouple() {
@@ -63,12 +63,38 @@ export function useSubmitPrompt() {
   const services = useServices();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ promptId, answer }: { promptId: string; answer: string }) =>
-      services.prompt.submitPromptAnswer(promptId, answer),
+    mutationFn: ({
+      promptId,
+      answer,
+      imageUri,
+    }: {
+      promptId: string;
+      answer: string;
+      imageUri: string | null;
+    }) => services.prompt.submitPromptAnswer(promptId, { answer, imageUri }),
     onSuccess: (next) => {
       syncPromptQueries(queryClient, next);
       queryClient.invalidateQueries({ queryKey: ['timeline'] });
     },
+  });
+}
+
+export function useFollowUpSuggestions(input: {
+  imageUri: string;
+  promptQuestion: string;
+  partnerName?: string;
+}) {
+  const services = useServices();
+  return useQuery({
+    queryKey: [
+      'followUpSuggestions',
+      input.imageUri,
+      input.promptQuestion,
+      input.partnerName ?? '',
+    ] as const,
+    queryFn: () => services.followUpSuggestions.suggestForReceivedPhoto(input),
+    enabled: Boolean(input.imageUri && input.promptQuestion),
+    staleTime: 1000 * 60 * 60,
   });
 }
 
@@ -138,11 +164,44 @@ export function useSharePresence() {
   const services = useServices();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { imageUri: string; caption?: string; mood?: string }) =>
-      services.presence.sharePost(input),
+    mutationFn: (input: {
+      imageUri: string;
+      caption?: string;
+      mood?: string;
+      locationLabel?: string;
+    }) => services.presence.sharePost(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['presence', 'feed'] });
       queryClient.invalidateQueries({ queryKey: ['timeline'] });
+    },
+  });
+}
+
+export function useReactToPost() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: string) => services.presence.reactToPost(postId),
+    onMutate: async (postId) => {
+      await queryClient.cancelQueries({ queryKey: ['presence', 'feed'] });
+      const previous = queryClient.getQueryData<PresencePost[]>(['presence', 'feed']);
+      queryClient.setQueryData<PresencePost[]>(['presence', 'feed'], (old) => {
+        if (!old) {
+          return old;
+        }
+        return old.map((p) =>
+          p.id === postId ? { ...p, reactionCount: p.reactionCount + 1 } : p,
+        );
+      });
+      return { previous };
+    },
+    onError: (_err, _postId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['presence', 'feed'], context.previous);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['presence', 'feed'] });
     },
   });
 }
