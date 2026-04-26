@@ -36,8 +36,14 @@ export default function AppTabsLayout() {
       }}
     >
       <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: makeTabBarIcon('home') }} />
-      <Tabs.Screen name="prompt" options={{ title: 'Prompt', tabBarIcon: makeTabBarIcon('comment') }} />
-      <Tabs.Screen name="photos" options={{ title: 'Photos', tabBarIcon: makeTabBarIcon('image') }} />
+      <Tabs.Screen
+        name="prompt"
+        options={{ title: 'Prompt', tabBarIcon: makeTabBarIcon('comment') }}
+      />
+      <Tabs.Screen
+        name="photos"
+        options={{ title: 'Photos', tabBarIcon: makeTabBarIcon('image') }}
+      />
       <Tabs.Screen
         name="calendar"
         options={{ title: 'Calendar', tabBarIcon: makeTabBarIcon('calendar') }}
@@ -46,7 +52,14 @@ export default function AppTabsLayout() {
         name="timeline"
         options={{ title: 'Timeline', tabBarIcon: makeTabBarIcon('list-alt') }}
       />
-      <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: makeTabBarIcon('cog') }} />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: makeTabBarIcon('cog'),
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 }

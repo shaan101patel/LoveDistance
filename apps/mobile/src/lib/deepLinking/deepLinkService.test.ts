@@ -22,4 +22,17 @@ describe('deepLinkService', () => {
   it('resolves tab ref to tab route', () => {
     expect(getPathFromRef({ kind: 'tab', name: 'timeline' })).toBe('/(app)/(tabs)/timeline');
   });
+
+  it('parses invite deep links to token ref', () => {
+    expect(parseDeepLink('lovedistance://invite/inv-abc-xyz12')).toEqual({
+      kind: 'invite',
+      token: 'inv-abc-xyz12',
+    });
+  });
+
+  it('resolves invite ref to onboarding invite route', () => {
+    expect(getPathFromRef({ kind: 'invite', token: 'inv-abc-xyz12' })).toBe(
+      '/(onboarding)/invite/inv-abc-xyz12',
+    );
+  });
 });

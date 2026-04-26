@@ -1,9 +1,11 @@
 import type {
+  AppLockSettings,
   CoupleProfile,
   Habit,
   MemoryItem,
   NotificationPrefs,
   PresencePost,
+  PrivacySettings,
   PromptThread,
   Session,
   UserProfile,
@@ -86,24 +88,48 @@ export const initialPrefs: NotificationPrefs = {
   milestones: true,
 };
 
+export const initialPrivacy: PrivacySettings = {
+  sharePresence: true,
+  productAnalytics: false,
+  redactPreviews: true,
+};
+
+export const initialAppLock: AppLockSettings = {
+  requirePasscode: false,
+  useBiometric: false,
+  isPasscodeSet: false,
+};
+
+/** Issued invite token from createInviteLink; acceptInvite must match (mock-only). */
+export type MockInviteLedger = {
+  issuedToken: string | null;
+  redeemedTokens: string[];
+};
+
 type MockDatabase = {
   session: Session | null;
   couple: CoupleProfile | null;
+  invite: MockInviteLedger;
   prompt: PromptThread;
   posts: PresencePost[];
   habits: Habit[];
   memories: MemoryItem[];
   prefs: NotificationPrefs;
+  privacy: PrivacySettings;
+  appLock: AppLockSettings;
 };
 
 export const mockDb: MockDatabase = {
   session: null,
   couple: null,
+  invite: { issuedToken: null, redeemedTokens: [] },
   prompt: initialPromptThread,
   posts: initialPresencePosts,
   habits: initialHabits,
   memories: initialMemories,
   prefs: initialPrefs,
+  privacy: { ...initialPrivacy },
+  appLock: { ...initialAppLock },
 };
 
 export function refreshRevealState() {

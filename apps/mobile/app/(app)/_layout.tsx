@@ -1,5 +1,6 @@
 import { Redirect, Stack, usePathname } from 'expo-router';
 
+import { useOnboardingStore } from '@/features/session/onboardingStore';
 import { useSessionStore } from '@/features/session/sessionStore';
 
 export default function AppLayout() {
@@ -7,10 +8,26 @@ export default function AppLayout() {
   const isSignedIn = useSessionStore((state) => state.isSignedIn);
   const isPaired = useSessionStore((state) => state.isPaired);
   const setReturnPath = useSessionStore((state) => state.setReturnPath);
+  const welcomeSeen = useOnboardingStore((s) => s.welcomeSeen);
+  const explainerDone = useOnboardingStore((s) => s.explainerDone);
+  const profileSetupDone = useOnboardingStore((s) => s.profileSetupDone);
 
   if (!isSignedIn) {
     setReturnPath(pathname);
+    if (!welcomeSeen) {
+      return <Redirect href="/(auth)/welcome" />;
+    }
     return <Redirect href="/(auth)/sign-in" />;
+  }
+
+  if (!explainerDone) {
+    setReturnPath(pathname);
+    return <Redirect href="/(onboarding)/explainer" />;
+  }
+
+  if (!profileSetupDone) {
+    setReturnPath(pathname);
+    return <Redirect href="/(onboarding)/profile-setup" />;
   }
 
   if (!isPaired) {

@@ -1,6 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useServices } from '@/services/ServiceContext';
+import type { CoupleProfile } from '@/types/domain';
+
+/** Couple space for the signed-in user; null when unpaired. Invalidated after pairing / sign-out flows. */
+export function useCouple() {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['couple'],
+    queryFn: (): Promise<CoupleProfile | null> => services.couple.getCouple(),
+  });
+}
 
 export function useTodayPrompt() {
   const services = useServices();
@@ -97,6 +107,38 @@ export function useNotificationPreferences() {
     mutationFn: services.notificationPrefs.updatePreferences,
     onSuccess: (next) => {
       queryClient.setQueryData(['notifications', 'prefs'], next);
+    },
+  });
+  return { query, mutation };
+}
+
+export function usePrivacySettings() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: ['userSettings', 'privacy'],
+    queryFn: () => services.userSettings.getPrivacy(),
+  });
+  const mutation = useMutation({
+    mutationFn: services.userSettings.updatePrivacy,
+    onSuccess: (next) => {
+      queryClient.setQueryData(['userSettings', 'privacy'], next);
+    },
+  });
+  return { query, mutation };
+}
+
+export function useAppLock() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: ['userSettings', 'appLock'],
+    queryFn: () => services.userSettings.getAppLock(),
+  });
+  const mutation = useMutation({
+    mutationFn: services.userSettings.updateAppLock,
+    onSuccess: (next) => {
+      queryClient.setQueryData(['userSettings', 'appLock'], next);
     },
   });
   return { query, mutation };

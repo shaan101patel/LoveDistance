@@ -1,5 +1,14 @@
 import type { ServiceRegistry } from '@/services/ports';
-import { mockDb, mockMe, mockPartner, refreshRevealState } from '@/services/mock/mockData';
+import type { Session, UserProfile } from '@/types/domain';
+import {
+  initialAppLock,
+  initialPrefs,
+  initialPrivacy,
+  mockDb,
+  mockMe,
+  mockPartner,
+  refreshRevealState,
+} from '@/services/mock/mockData';
 import { getPathFromRef, parseDeepLink } from '@/lib/deepLinking/deepLinkService';
 
 async function withLatency<T>(result: T): Promise<T> {
@@ -7,21 +16,83 @@ async function withLatency<T>(result: T): Promise<T> {
   return result;
 }
 
+function userIdFromEmail(email: string): string {
+  const slug = email
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 48);
+  return `u-${slug || 'user'}`;
+}
+
+function buildUserFromInput(email: string, firstName: string, displayName?: string): UserProfile {
+  return {
+    id: userIdFromEmail(email),
+    firstName: firstName.trim() || 'You',
+    email: email.toLowerCase().trim(),
+    displayName: displayName?.trim() || undefined,
+  };
+}
+
+function buildSessionFromUser(user: UserProfile): Session {
+  return { user, signedInAt: new Date().toISOString() };
+}
+
+/** Matches tokens produced by createInviteLink (also accepted on a fresh mock DB for two-device testing). */
+function isMockStyleInviteToken(token: string): boolean {
+  return /^inv-[a-z0-9]+-[a-z0-9]+$/i.test(token) && token.length >= 8;
+}
+
 export const mockServices: ServiceRegistry = {
   auth: {
     async getSession() {
       return withLatency(mockDb.session);
     },
-    async signIn(firstName) {
+    async signIn({ email, password }) {
+      const trimmed = email.trim();
+      if (!trimmed || !password) {
+        throw new Error('Email and password are required');
+      }
+      const user = buildUserFromInput(trimmed, 'You');
+      mockDb.session = buildSessionFromUser(user);
+      return withLatency(mockDb.session);
+    },
+    async signUp({ email, password, firstName }) {
+      const trimmed = email.trim();
+      if (!trimmed || !password) {
+        throw new Error('Email and password are required');
+      }
+      if (!firstName?.trim()) {
+        throw new Error('First name is required');
+      }
+      const user = buildUserFromInput(trimmed, firstName.trim());
+      mockDb.session = buildSessionFromUser(user);
+      return withLatency(mockDb.session);
+    },
+    async updateProfile(partial) {
+      if (!mockDb.session) {
+        throw new Error('Not signed in');
+      }
+      const u = mockDb.session.user;
       mockDb.session = {
-        user: { ...mockMe, firstName: firstName.trim() || mockMe.firstName },
-        signedInAt: new Date().toISOString(),
+        ...mockDb.session,
+        user: {
+          ...u,
+          firstName: partial.firstName?.trim() ?? u.firstName,
+          displayName: partial.displayName?.trim() ?? u.displayName,
+        },
+        signedInAt: mockDb.session.signedInAt,
       };
       return withLatency(mockDb.session);
     },
     async signOut() {
       mockDb.session = null;
       mockDb.couple = null;
+      mockDb.invite = { issuedToken: null, redeemedTokens: [] };
+      mockDb.prefs = { ...initialPrefs };
+      mockDb.privacy = { ...initialPrivacy };
+      mockDb.appLock = { ...initialAppLock };
       return withLatency(undefined);
     },
   },
@@ -30,19 +101,56 @@ export const mockServices: ServiceRegistry = {
       return withLatency(mockDb.couple);
     },
     async createInviteLink() {
-      return withLatency('lovedistance://invite/mock-invite-token');
+      if (mockDb.couple) {
+        throw new Error(
+          'You are already linked with a partner. Use another account to test a fresh invite, or sign out to reset mock state.',
+        );
+      }
+      const token = `inv-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      mockDb.invite.issuedToken = token;
+      const path = `invite/${token}`;
+      return withLatency(`lovedistance://${path}`);
     },
     async acceptInvite(token) {
+      const normalized = token.trim();
+      if (!normalized) {
+        throw new Error('Add an invite code or open the full link your partner sent.');
+      }
+      if (mockDb.couple) {
+        throw new Error('You are already paired with someone.');
+      }
+      if (normalized === 'invalid') {
+        throw new Error('This invite is not valid. Double-check the code or ask for a new link.');
+      }
+      if (normalized === 'expired') {
+        throw new Error('This invite has expired. Ask your partner to send a new one.');
+      }
+      if (normalized === 'used') {
+        throw new Error('This invite was already used.');
+      }
+      if (mockDb.invite.redeemedTokens.includes(normalized)) {
+        throw new Error('This invite was already used.');
+      }
+      const matchesThisDevice = Boolean(
+        mockDb.invite.issuedToken && normalized === mockDb.invite.issuedToken,
+      );
+      const validShape = isMockStyleInviteToken(normalized);
+      if (!matchesThisDevice && !validShape) {
+        throw new Error('This invite is not valid. Double-check the code or request a new link.');
+      }
+
+      mockDb.invite.redeemedTokens.push(normalized);
+      if (matchesThisDevice) {
+        mockDb.invite.issuedToken = null;
+      }
+
       mockDb.couple = {
-        id: 'couple-1',
+        id: `couple-${normalized}`,
         meId: mockDb.session?.user.id ?? mockMe.id,
         partner: mockPartner,
         reunionDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 42).toISOString(),
       };
-      return withLatency({
-        ...mockDb.couple,
-        id: `${mockDb.couple.id}:${token}`,
-      });
+      return withLatency({ ...mockDb.couple });
     },
   },
   prompt: {
@@ -157,6 +265,36 @@ export const mockServices: ServiceRegistry = {
         ...prefs,
       };
       return withLatency({ ...mockDb.prefs });
+    },
+  },
+  userSettings: {
+    async getPrivacy() {
+      return withLatency({ ...mockDb.privacy });
+    },
+    async updatePrivacy(partial) {
+      mockDb.privacy = {
+        ...mockDb.privacy,
+        ...partial,
+      };
+      return withLatency({ ...mockDb.privacy });
+    },
+    async getAppLock() {
+      return withLatency({ ...mockDb.appLock });
+    },
+    async updateAppLock(partial) {
+      const next: typeof mockDb.appLock = {
+        ...mockDb.appLock,
+        ...partial,
+      };
+      if (next.requirePasscode && !mockDb.appLock.isPasscodeSet) {
+        next.isPasscodeSet = true;
+      }
+      if (!next.requirePasscode) {
+        next.isPasscodeSet = false;
+        next.useBiometric = false;
+      }
+      mockDb.appLock = next;
+      return withLatency({ ...mockDb.appLock });
     },
   },
   deepLinks: {

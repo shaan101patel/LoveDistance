@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { Card } from '@/components/primitives';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
+import { useCouple } from '@/features/hooks';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
@@ -17,6 +18,16 @@ const quickLinks: { href: string; label: string; hint: string }[] = [
 
 export default function HomeScreen() {
   const theme = useTheme();
+  const { data: couple, isLoading } = useCouple();
+  const partner = couple?.partner;
+  const reunion = couple?.reunionDate
+    ? new Date(couple.reunionDate).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null;
+
   return (
     <SectionScaffold
       kicker="Your space"
@@ -24,9 +35,33 @@ export default function HomeScreen() {
       title="Home"
     >
       <SectionCard>
+        {isLoading ? (
+          <Body>Loading your couple space…</Body>
+        ) : partner ? (
+          <View style={{ gap: spacing.xs }}>
+            <Text style={{ color: theme.colors.textPrimary, fontWeight: '700', fontSize: 18 }}>
+              Paired with {partner.firstName}
+              {partner.displayName && partner.displayName !== partner.firstName
+                ? ` (${partner.displayName})`
+                : ''}
+            </Text>
+            {reunion ? (
+              <Body>Next reunion (sample): {reunion}</Body>
+            ) : (
+              <Body>Your shared room is live—mock data only until Supabase is connected.</Body>
+            )}
+          </View>
+        ) : (
+          <Body>
+            You are not linked yet. If you see this, head back to pairing from the app entry
+            (redirect should normally keep you in onboarding).
+          </Body>
+        )}
+      </SectionCard>
+      <SectionCard>
         <Body>
-          This shell uses mock sign-in and pairing. Deep links (tabs/section and thread routes) are
-          wired for later Supabase; no backend yet.
+          Deep links (tabs, prompts, and invite URLs) are wired for a future Supabase couple record;
+          this build stays mock-only.
         </Body>
       </SectionCard>
       <View

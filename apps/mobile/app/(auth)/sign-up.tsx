@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 
@@ -12,28 +12,31 @@ import { useServices } from '@/services/ServiceContext';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
-export default function SignInScreen() {
+export default function SignUpScreen() {
   const theme = useTheme();
   const services = useServices();
-  const params = useLocalSearchParams<{ email?: string | string[] }>();
-  const prefill = Array.isArray(params.email) ? params.email[0] : params.email;
   const setSignedIn = useSessionStore((s) => s.setSignedIn);
   const returnPath = useSessionStore((s) => s.returnPath);
   const setReturnPath = useSessionStore((s) => s.setReturnPath);
   const explainerDone = useOnboardingStore((s) => s.explainerDone);
   const profileSetupDone = useOnboardingStore((s) => s.profileSetupDone);
-  const [email, setEmail] = useState(prefill ?? '');
+  const [firstName, setFirstName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formError, setFormError] = useState('');
 
-  async function onSignIn() {
+  async function onSignUp() {
     setFormError('');
-    if (!email.trim() || !password) {
-      setFormError('Email and password are required');
+    if (!firstName.trim() || !email.trim() || !password) {
+      setFormError('Please fill in all fields');
       return;
     }
     try {
-      await services.auth.signIn({ email: email.trim(), password });
+      await services.auth.signUp({
+        firstName: firstName.trim(),
+        email: email.trim(),
+        password,
+      });
       setSignedIn(true);
       const next = getPostSignInHref({ explainerDone, profileSetupDone }, returnPath);
       if (isPendingInvitePath(returnPath) && explainerDone && profileSetupDone) {
@@ -41,20 +44,28 @@ export default function SignInScreen() {
       }
       router.replace(next);
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : 'Sign in failed');
+      setFormError(e instanceof Error ? e.message : 'Sign up failed');
     }
   }
 
   return (
     <SectionScaffold
       kicker="Account"
-      lead="Your session is stored locally in mock mode—perfect for building the full flow."
-      title="Sign in"
+      lead="We’ll use this to save your space—still mock-only on this build."
+      title="Create an account"
     >
       {formError ? (
         <Text style={{ color: theme.colors.danger, marginBottom: spacing.sm }}>{formError}</Text>
       ) : null}
       <SectionCard>
+        <Input
+          accessibilityLabel="First name"
+          autoCapitalize="words"
+          label="First name"
+          onChangeText={setFirstName}
+          placeholder="What should we call you?"
+          value={firstName}
+        />
         <Input
           accessibilityLabel="Email"
           autoCapitalize="none"
@@ -75,7 +86,7 @@ export default function SignInScreen() {
           value={password}
         />
         <View style={{ marginTop: spacing.sm }}>
-          <Button label="Sign in" onPress={onSignIn} />
+          <Button label="Create account" onPress={onSignUp} />
         </View>
       </SectionCard>
     </SectionScaffold>

@@ -19,6 +19,8 @@ export const supabaseServices: ServiceRegistry = {
   auth: {
     getSession: () => notReady('auth.getSession'),
     signIn: () => notReady('auth.signIn'),
+    signUp: () => notReady('auth.signUp'),
+    updateProfile: () => notReady('auth.updateProfile'),
     signOut: () => notReady('auth.signOut'),
   },
   couple: {
@@ -47,6 +49,12 @@ export const supabaseServices: ServiceRegistry = {
   notificationPrefs: {
     getPreferences: () => notReady('notificationPrefs.getPreferences'),
     updatePreferences: () => notReady('notificationPrefs.updatePreferences'),
+  },
+  userSettings: {
+    getPrivacy: () => notReady('userSettings.getPrivacy'),
+    updatePrivacy: () => notReady('userSettings.updatePrivacy'),
+    getAppLock: () => notReady('userSettings.getAppLock'),
+    updateAppLock: () => notReady('userSettings.updateAppLock'),
   },
   deepLinks: {
     parseUrl: parseDeepLink,

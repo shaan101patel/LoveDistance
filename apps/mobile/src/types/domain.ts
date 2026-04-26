@@ -1,6 +1,8 @@
 export type UserProfile = {
   id: string;
   firstName: string;
+  email?: string;
+  displayName?: string;
 };
 
 export type Session = {
@@ -67,6 +69,23 @@ export type NotificationPrefs = {
   newPhoto: boolean;
   habitReminder: boolean;
   milestones: boolean;
+};
+
+/** Local-only privacy flags; a Supabase `profiles` row or `user_settings` would mirror this later. */
+export type PrivacySettings = {
+  sharePresence: boolean;
+  productAnalytics: boolean;
+  redactPreviews: boolean;
+};
+
+/**
+ * App lock + biometrics: UI-only in mock mode (no Keychain, no local authentication).
+ * Future native module would read/write `isPasscodeSet` and biometric enrollment.
+ */
+export type AppLockSettings = {
+  requirePasscode: boolean;
+  useBiometric: boolean;
+  isPasscodeSet: boolean;
 };
 
 export type AppTabName = 'home' | 'prompt' | 'photos' | 'calendar' | 'timeline' | 'settings';
