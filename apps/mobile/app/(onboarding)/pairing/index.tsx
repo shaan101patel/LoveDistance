@@ -5,31 +5,25 @@ import { Button } from '@/components/primitives';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useSessionStore } from '@/features/session/sessionStore';
+import { isSupabaseApiMode, pairingScreenCopy } from '@/services/apiMode';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
 export default function PairingHubScreen() {
   const theme = useTheme();
   const isPaired = useSessionStore((s) => s.isPaired);
+  const live = isSupabaseApiMode();
 
   if (isPaired) {
     return (
       <SectionScaffold
-        footer={
-          <Body>
-            Unpair in a future build. For now, sign out in Settings to reset mock state and try
-            again with a fresh &quot;account&quot;.
-          </Body>
-        }
+        footer={<Body>{pairingScreenCopy.pairingHubPairedFooter(live)}</Body>}
         kicker="Together"
-        lead="You’re already in a couple space. Head home, or read how mock invites work below."
+        lead={pairingScreenCopy.pairingHubPairedLead(live)}
         title="You’re paired"
       >
         <SectionCard>
-          <Body>
-            This device already accepted an invite or created a successful link. Your tabs are
-            unlocked.
-          </Body>
+          <Body>{pairingScreenCopy.pairingHubPairedCardBody(live)}</Body>
           <View style={{ gap: spacing.md, marginTop: spacing.md }}>
             <Button label="Open home" onPress={() => router.replace('/(app)/(tabs)/home')} />
             <Button
@@ -47,12 +41,7 @@ export default function PairingHubScreen() {
     <SectionScaffold
       footer={
         <Text style={{ ...theme.type.bodySm, color: theme.colors.textSecondary }}>
-          Mock pairing: create a link, or enter a code. Real tokens use the{' '}
-          <Text style={{ fontWeight: '700' }}>inv-…</Text> shape (after{' '}
-          <Text style={{ fontWeight: '700' }}>invite/</Text> in the URL). Try{' '}
-          <Text style={{ fontWeight: '700' }}>expired</Text>,{' '}
-          <Text style={{ fontWeight: '700' }}>used</Text>, or{' '}
-          <Text style={{ fontWeight: '700' }}>invalid</Text> in enter-code to see edge states.
+          {pairingScreenCopy.pairingHubUnpairedFooter(live)}
         </Text>
       }
       kicker="Together"

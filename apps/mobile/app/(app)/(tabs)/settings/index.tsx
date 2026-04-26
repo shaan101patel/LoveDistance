@@ -98,12 +98,14 @@ export default function SettingsHubScreen() {
           </Link>
         </View>
         <View style={{ marginTop: spacing.lg }}>
-          <Body>
-            Sign out clears mock session, pairing, notification prefs, privacy, and app lock state.
-          </Body>
+          <Body>{authScreenCopy.settingsSignOutDetail(isSupabaseApiMode())}</Body>
         </View>
         <View style={{ marginTop: spacing.md }}>
-          <Button label="Sign out (mock)" onPress={signOut} variant="ghost" />
+          <Button
+            label={authScreenCopy.settingsSignOutButtonLabel(isSupabaseApiMode())}
+            onPress={signOut}
+            variant="ghost"
+          />
         </View>
       </SectionCard>
     </SectionScaffold>

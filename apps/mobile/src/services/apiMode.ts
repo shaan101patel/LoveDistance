@@ -27,6 +27,14 @@ export const authScreenCopy = {
       ? 'Preferences and profile sync to your account where supported.'
       : 'MVP: preferences live in the mock in-memory store and reset on sign out.';
   },
+  settingsSignOutDetail(live: boolean): string {
+    return live
+      ? 'Sign out ends your session on this device. Local-only preferences reset where they are not synced; your couple link stays with your account until you sign in again.'
+      : 'Sign out clears mock session, pairing, notification prefs, privacy, and app lock state.';
+  },
+  settingsSignOutButtonLabel(live: boolean): string {
+    return live ? 'Sign out' : 'Sign out (mock)';
+  },
 };
 
 /** Pairing / invite onboarding copy; branch on `EXPO_PUBLIC_API_MODE`. */
@@ -73,5 +81,25 @@ export const pairingScreenCopy = {
     return live
       ? 'That token isn’t valid for joining. Use the invite link or code your partner sent.'
       : 'That is a placeholder. Use a real code from an invite, or try “expired” / “used” to see errors.';
+  },
+  pairingHubPairedLead(live: boolean): string {
+    return live
+      ? 'You’re linked with your partner on this account. Head home, or review invite links below.'
+      : 'You’re already in a couple space. Head home, or read how mock invites work below.';
+  },
+  pairingHubPairedFooter(live: boolean): string {
+    return live
+      ? 'Unpairing from another device will arrive in a future build. To use a different account on this device, sign out in Settings.'
+      : 'Unpair in a future build. For now, sign out in Settings to reset mock state and try again with a fresh “account”.';
+  },
+  pairingHubPairedCardBody(live: boolean): string {
+    return live
+      ? 'Your couple is stored with your account. Tabs stay unlocked while you’re signed in.'
+      : 'This device already accepted an invite or created a successful link. Your tabs are unlocked.';
+  },
+  pairingHubUnpairedFooter(live: boolean): string {
+    return live
+      ? 'Create an invite or enter your partner’s code. Invite tokens use the inv-… shape and appear after invite/ in shared links and lovedistance:// URLs.'
+      : 'Mock pairing: create a link, or enter a code. Real tokens use the inv-… shape (after invite/ in the URL). Try expired, used, or invalid in enter-code to see edge states.';
   },
 };
