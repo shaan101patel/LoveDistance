@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/primitives/Button';
@@ -17,12 +17,25 @@ const DEMO_STILL_LIFE =
 export default function PhotoComposeScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const params = useLocalSearchParams<{ ritual?: string | string[] }>();
+  const ritualRaw = params.ritual;
+  const ritualPreset = typeof ritualRaw === 'string' ? ritualRaw : ritualRaw?.[0];
   const share = useSharePresence();
   const [step, setStep] = useState<'pick' | 'preview'>('pick');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
   const [mood, setMood] = useState<MoodTag>(null);
   const [locationLabel, setLocationLabel] = useState('');
+  const goodMorningPresetApplied = useRef(false);
+
+  useEffect(() => {
+    if (ritualPreset !== 'good_morning' || step !== 'preview' || !imageUri || goodMorningPresetApplied.current) {
+      return;
+    }
+    goodMorningPresetApplied.current = true;
+    setCaption((c) => (c.trim() === '' ? 'Good morning from my corner of the world ☀️' : c));
+    setMood((m) => (m === null ? 'soft' : m));
+  }, [ritualPreset, step, imageUri]);
 
   const showPicker = useCallback(
     (mode: 'library' | 'camera' | 'demo') => {
@@ -86,7 +99,11 @@ export default function PhotoComposeScreen() {
     return (
       <Screen>
         <Heading>New photo</Heading>
-        <Body>Share a still from your day—add details on the next step.</Body>
+        <Body>
+          {ritualPreset === 'good_morning'
+            ? 'Good morning ritual: pick or capture a photo. We will suggest a warm caption and mood on the next step (you can edit).'
+            : 'Share a still from your day—add details on the next step.'}
+        </Body>
         <View style={entryStyles.entryColumn}>
           <Pressable onPress={() => showPicker('camera')} style={entryStyles.entryButton}>
             <Text style={entryStyles.entryLabel}>Take a photo</Text>
@@ -143,6 +160,7 @@ export default function PhotoComposeScreen() {
           <Button
             label="Start over"
             onPress={() => {
+              goodMorningPresetApplied.current = false;
               setStep('pick');
               setImageUri(null);
               setCaption('');

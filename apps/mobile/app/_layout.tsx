@@ -1,14 +1,20 @@
 import { QueryClientProvider } from '@tanstack/react-query';
+import type { Href } from 'expo-router';
 import { router, Stack } from 'expo-router';
 import * as Linking from 'expo-linking';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import 'react-native-reanimated';
 
 import { LoadingState } from '@/components/status';
 import { registerNotificationResponseHandler } from '@/features/notifications/notificationsClient';
+import { useOnboardingStore } from '@/features/session/onboardingStore';
 import { useBootstrapSession } from '@/features/session/useBootstrapSession';
 import { useSessionStore } from '@/features/session/sessionStore';
+import {
+  shouldDeferDeepLink,
+  targetPathFromRef,
+} from '@/lib/deepLinking/deepLinkNavigation';
 import { queryClient } from '@/lib/queryClient';
 import { ServiceProvider, useServices } from '@/services/ServiceContext';
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -33,6 +39,12 @@ function RootLayoutNav() {
   useBootstrapSession();
   const services = useServices();
   const isHydrated = useSessionStore((state) => state.isHydrated);
+  const isSignedIn = useSessionStore((state) => state.isSignedIn);
+  const isPaired = useSessionStore((state) => state.isPaired);
+  const setReturnPath = useSessionStore((state) => state.setReturnPath);
+  const explainerDone = useOnboardingStore((state) => state.explainerDone);
+  const profileSetupDone = useOnboardingStore((state) => state.profileSetupDone);
+  const processedInitialUrlRef = useRef(false);
 
   useEffect(() => {
     const sub = registerNotificationResponseHandler();
@@ -40,25 +52,56 @@ function RootLayoutNav() {
   }, []);
 
   useEffect(() => {
-    async function handleInitialLink() {
-      const initialUrl = await Linking.getInitialURL();
-      if (!initialUrl) {
+    if (!isHydrated) {
+      return;
+    }
+
+    function handleUrl(url: string) {
+      const ref = services.deepLinks.parseUrl(url);
+      if (!ref) {
         return;
       }
-      const ref = services.deepLinks.parseUrl(initialUrl);
-      if (ref) {
-        router.push(services.deepLinks.toPath(ref));
+      const target = targetPathFromRef(ref);
+      if (
+        shouldDeferDeepLink(ref, {
+          isSignedIn,
+          isPaired,
+          explainerDone,
+          profileSetupDone,
+        })
+      ) {
+        setReturnPath(target);
+        return;
+      }
+      router.replace(target as Href);
+    }
+
+    async function runInitial() {
+      if (processedInitialUrlRef.current) {
+        return;
+      }
+      processedInitialUrlRef.current = true;
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl) {
+        handleUrl(initialUrl);
       }
     }
-    handleInitialLink();
+
+    void runInitial();
+
     const sub = Linking.addEventListener('url', (event) => {
-      const ref = services.deepLinks.parseUrl(event.url);
-      if (ref) {
-        router.push(services.deepLinks.toPath(ref));
-      }
+      handleUrl(event.url);
     });
     return () => sub.remove();
-  }, [services.deepLinks]);
+  }, [
+    explainerDone,
+    isHydrated,
+    isPaired,
+    isSignedIn,
+    profileSetupDone,
+    services.deepLinks,
+    setReturnPath,
+  ]);
 
   useEffect(() => {
     if (isHydrated) {

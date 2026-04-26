@@ -3,11 +3,13 @@ import type {
   CoupleProfile,
   Habit,
   MemoryItem,
+  NotificationInboxItem,
   NotificationPrefs,
   PresencePost,
   PrivacySettings,
   PromptThread,
   PromptThreadActivity,
+  RitualSignalEntry,
   Session,
   UserProfile,
 } from '@/types/domain';
@@ -229,7 +231,86 @@ export const initialPrefs: NotificationPrefs = {
   newPhoto: true,
   habitReminder: true,
   milestones: true,
+  reactions: true,
+  anniversaries: true,
+  countdownUpdates: true,
 };
+
+/** Seeded inbox for notification center (mock). */
+export const initialNotificationInbox: NotificationInboxItem[] = [
+  {
+    id: 'n-prompt-1',
+    category: 'prompt',
+    title: 'Daily prompt waiting',
+    summary: "Today's question is ready for you both.",
+    createdAt: '2026-04-26T08:00:00.000Z',
+    read: false,
+    href: '/(app)/prompt/prompt-today',
+  },
+  {
+    id: 'n-photo-1',
+    category: 'photo',
+    title: 'New photo from Partner',
+    summary: 'Sunset walk, thinking of you.',
+    createdAt: '2026-04-26T07:30:00.000Z',
+    read: false,
+    href: '/(app)/(tabs)/photos',
+  },
+  {
+    id: 'n-react-1',
+    category: 'reaction',
+    title: 'Partner reacted to your answer',
+    summary: 'They sent a heart on today’s prompt thread.',
+    createdAt: '2026-04-25T22:15:00.000Z',
+    read: true,
+    href: '/(app)/prompt/prompt-today',
+  },
+  {
+    id: 'n-habit-1',
+    category: 'habit',
+    title: 'Morning check-in reminder',
+    summary: 'Shared wake-up habit: tap when you are up.',
+    createdAt: '2026-04-25T14:00:00.000Z',
+    read: false,
+    href: '/(app)/wake-check-in',
+  },
+  {
+    id: 'n-anniv-1',
+    category: 'anniversary',
+    title: 'Anniversary next week',
+    summary: 'Your relationship anniversary is in 7 days.',
+    createdAt: '2026-04-24T10:00:00.000Z',
+    read: true,
+    href: '/(app)/(tabs)/timeline',
+  },
+  {
+    id: 'n-mile-1',
+    category: 'anniversary',
+    title: 'Milestone saved',
+    summary: 'A new memory was added to your timeline.',
+    createdAt: '2026-04-23T18:00:00.000Z',
+    read: true,
+    href: '/(app)/(tabs)/timeline',
+  },
+  {
+    id: 'n-count-1',
+    category: 'countdown',
+    title: 'Reunion countdown',
+    summary: '42 days until your next visit (sample).',
+    createdAt: '2026-04-22T09:00:00.000Z',
+    read: false,
+    href: '/(app)/(tabs)/home',
+  },
+  {
+    id: 'n-habit-2',
+    category: 'habit',
+    title: 'Weekly habit goal',
+    summary: 'You are 3 of 5 days on a shared habit this week.',
+    createdAt: '2026-04-21T12:00:00.000Z',
+    read: true,
+    href: '/(app)/(tabs)/calendar',
+  },
+];
 
 export const initialPrivacy: PrivacySettings = {
   sharePresence: true,
@@ -242,6 +323,8 @@ export const initialAppLock: AppLockSettings = {
   useBiometric: false,
   isPasscodeSet: false,
 };
+
+export const initialRitualSignals: RitualSignalEntry[] = [];
 
 /** Issued invite token from createInviteLink; acceptInvite must match (mock-only). */
 export type MockInviteLedger = {
@@ -262,6 +345,8 @@ type MockDatabase = {
   prefs: NotificationPrefs;
   privacy: PrivacySettings;
   appLock: AppLockSettings;
+  ritualSignals: RitualSignalEntry[];
+  notificationInbox: NotificationInboxItem[];
 };
 
 export const mockDb: MockDatabase = {
@@ -276,6 +361,8 @@ export const mockDb: MockDatabase = {
   prefs: initialPrefs,
   privacy: { ...initialPrivacy },
   appLock: { ...initialAppLock },
+  ritualSignals: [...initialRitualSignals],
+  notificationInbox: initialNotificationInbox.map((n) => ({ ...n })),
 };
 
 export function refreshRevealState() {

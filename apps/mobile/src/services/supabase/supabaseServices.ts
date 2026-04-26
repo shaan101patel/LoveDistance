@@ -49,6 +49,10 @@ export const supabaseServices: ServiceRegistry = {
     getHabitById: () => notReady('habits.getHabitById'),
     toggleHabitCompletion: () => notReady('habits.toggleHabitCompletion'),
   },
+  rituals: {
+    logRitualSignal: () => notReady('rituals.logRitualSignal'),
+    listRecentRitualSignals: () => notReady('rituals.listRecentRitualSignals'),
+  },
   timeline: {
     listMemories: () => notReady('timeline.listMemories'),
     getMemoryById: () => notReady('timeline.getMemoryById'),
@@ -60,6 +64,11 @@ export const supabaseServices: ServiceRegistry = {
   notificationPrefs: {
     getPreferences: () => notReady('notificationPrefs.getPreferences'),
     updatePreferences: () => notReady('notificationPrefs.updatePreferences'),
+  },
+  notificationInbox: {
+    listInbox: () => notReady('notificationInbox.listInbox'),
+    markRead: () => notReady('notificationInbox.markRead'),
+    markAllRead: () => notReady('notificationInbox.markAllRead'),
   },
   userSettings: {
     getPrivacy: () => notReady('userSettings.getPrivacy'),

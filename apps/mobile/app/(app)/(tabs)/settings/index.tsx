@@ -29,6 +29,7 @@ export default function SettingsHubScreen() {
     setSignedIn(false);
     await queryClient.invalidateQueries({ queryKey: ['couple'] });
     await queryClient.invalidateQueries({ queryKey: ['notifications', 'prefs'] });
+    await queryClient.invalidateQueries({ queryKey: ['notifications', 'inbox'] });
     await queryClient.invalidateQueries({ queryKey: ['userSettings'] });
     router.replace('/(auth)/sign-in');
   }

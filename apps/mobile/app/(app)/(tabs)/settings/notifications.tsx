@@ -1,7 +1,8 @@
+import { useRouter, type Href } from 'expo-router';
 import { useMemo } from 'react';
 import { View } from 'react-native';
 
-import { SettingsSubheading, SettingsToggleRow } from '@/components/settings';
+import { SettingsLinkRow, SettingsSubheading, SettingsToggleRow } from '@/components/settings';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useNotificationPreferences } from '@/features/hooks';
@@ -20,18 +21,34 @@ const ROWS: { key: keyof NotificationPrefs; label: string; description: string }
     description: 'When your partner shares in the room',
   },
   {
+    key: 'reactions',
+    label: 'Reactions',
+    description: 'Hearts and replies on prompts and threads (mock)',
+  },
+  {
     key: 'habitReminder',
-    label: 'Habits & rituals',
-    description: 'Nudges for shared check-ins (mock)',
+    label: 'Habit reminders',
+    description: 'Nudges for shared check-ins and rituals (mock)',
   },
   {
     key: 'milestones',
-    label: 'Milestones',
-    description: 'Streaks and small wins',
+    label: 'Milestones & streaks',
+    description: 'Streak wins and small wins on the timeline (mock)',
+  },
+  {
+    key: 'anniversaries',
+    label: 'Anniversaries',
+    description: 'Relationship dates and memory milestones (mock)',
+  },
+  {
+    key: 'countdownUpdates',
+    label: 'Countdown updates',
+    description: 'Reunion countdown checkpoints (mock)',
   },
 ];
 
 export default function SettingsNotificationsScreen() {
+  const router = useRouter();
   const { query, mutation } = useNotificationPreferences();
   const prefs = query.data;
 
@@ -59,10 +76,19 @@ export default function SettingsNotificationsScreen() {
       {query.isLoading ? <Body>Loading…</Body> : null}
       {query.isError ? <Body>Could not load notification preferences.</Body> : null}
       {prefs ? (
-        <SectionCard>
-          <SettingsSubheading>Channels</SettingsSubheading>
-          <View style={{ gap: spacing.lg }}>{rows}</View>
-        </SectionCard>
+        <>
+          <SectionCard>
+            <SettingsLinkRow
+              label="Open notification center"
+              description="Preview inbox grouped by category (mock events only)"
+              onPress={() => router.push('/(app)/notifications' as Href)}
+            />
+          </SectionCard>
+          <SectionCard>
+            <SettingsSubheading>Channels</SettingsSubheading>
+            <View style={{ gap: spacing.lg }}>{rows}</View>
+          </SectionCard>
+        </>
       ) : null}
     </SectionScaffold>
   );

@@ -1,3 +1,4 @@
+import type { Href } from 'expo-router';
 import { router } from 'expo-router';
 import { Text } from 'react-native';
 
@@ -5,11 +6,14 @@ import { Button } from '@/components/primitives';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useCouple } from '@/features/hooks';
+import { useSessionStore } from '@/features/session/sessionStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
 export default function PairedSuccessScreen() {
   const { data: couple, isLoading } = useCouple();
+  const returnPath = useSessionStore((s) => s.returnPath);
+  const setReturnPath = useSessionStore((s) => s.setReturnPath);
   const theme = useTheme();
   const partnerName = couple?.partner.firstName ?? 'your partner';
   const reunionHint = couple?.reunionDate
@@ -42,7 +46,17 @@ export default function PairedSuccessScreen() {
                 Next reunion penciled for {reunionHint} (sample date from mock data).
               </Text>
             ) : null}
-            <Button label="Go to your space" onPress={() => router.replace('/(app)/(tabs)/home')} />
+            <Button
+              label="Go to your space"
+              onPress={() => {
+                const next =
+                  returnPath && returnPath.startsWith('/(app)')
+                    ? returnPath
+                    : '/(app)/(tabs)/home';
+                router.replace(next as Href);
+                setReturnPath(null);
+              }}
+            />
           </>
         )}
       </SectionCard>

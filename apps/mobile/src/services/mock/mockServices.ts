@@ -1,10 +1,18 @@
 import type { ServiceRegistry } from '@/services/ports';
-import type { Session, TimelineMemoryFilter, UserProfile } from '@/types/domain';
+import type {
+  NotificationInboxItem,
+  RitualSignalEntry,
+  Session,
+  TimelineMemoryFilter,
+  UserProfile,
+} from '@/types/domain';
 import {
   cloneThreadActivity,
   initialAppLock,
   initialPrefs,
   initialPrivacy,
+  initialNotificationInbox,
+  initialRitualSignals,
   mockDb,
   mockMe,
   mockPartner,
@@ -111,6 +119,8 @@ export const mockServices: ServiceRegistry = {
       mockDb.privacy = { ...initialPrivacy };
       mockDb.appLock = { ...initialAppLock };
       resetThreadActivityToInitial();
+      mockDb.ritualSignals = [...initialRitualSignals];
+      mockDb.notificationInbox = initialNotificationInbox.map((n) => ({ ...n }));
       return withLatency(undefined);
     },
   },
@@ -355,6 +365,31 @@ export const mockServices: ServiceRegistry = {
       return withLatency([...mockDb.habits]);
     },
   },
+  rituals: {
+    async logRitualSignal(kind, body) {
+      const text = body.trim();
+      if (!text) {
+        throw new Error('Message cannot be empty.');
+      }
+      if (!mockDb.session) {
+        throw new Error('Not signed in');
+      }
+      const authorId = mockDb.session.user.id;
+      const entry: RitualSignalEntry = {
+        id: `ritual-${Date.now()}`,
+        kind,
+        body: text,
+        authorId,
+        createdAt: new Date().toISOString(),
+      };
+      mockDb.ritualSignals = [entry, ...mockDb.ritualSignals];
+      return withLatency([...mockDb.ritualSignals]);
+    },
+    async listRecentRitualSignals(limit) {
+      const n = Math.max(0, Math.min(50, limit));
+      return withLatency(mockDb.ritualSignals.slice(0, n));
+    },
+  },
   timeline: {
     async listMemories(filter: TimelineMemoryFilter = 'all') {
       const base =
@@ -397,6 +432,28 @@ export const mockServices: ServiceRegistry = {
         ...prefs,
       };
       return withLatency({ ...mockDb.prefs });
+    },
+  },
+  notificationInbox: {
+    async listInbox(limit = 50) {
+      const sorted = [...mockDb.notificationInbox].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      const n = Math.max(1, Math.min(100, limit));
+      return withLatency(sorted.slice(0, n).map((x) => ({ ...x })));
+    },
+    async markRead(ids) {
+      const idSet = new Set(ids);
+      mockDb.notificationInbox = mockDb.notificationInbox.map((row): NotificationInboxItem =>
+        idSet.has(row.id) ? { ...row, read: true } : row,
+      );
+      return withLatency(mockDb.notificationInbox.map((x) => ({ ...x })));
+    },
+    async markAllRead() {
+      mockDb.notificationInbox = mockDb.notificationInbox.map(
+        (row): NotificationInboxItem => ({ ...row, read: true }),
+      );
+      return withLatency(mockDb.notificationInbox.map((x) => ({ ...x })));
     },
   },
   userSettings: {

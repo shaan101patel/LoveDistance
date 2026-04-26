@@ -35,4 +35,42 @@ describe('deepLinkService', () => {
       '/(onboarding)/invite/inv-abc-xyz12',
     );
   });
+
+  it('parses settings subsection paths', () => {
+    expect(parseDeepLink('lovedistance://settings/privacy')).toEqual({
+      kind: 'settings',
+      subsection: 'privacy',
+    });
+    expect(parseDeepLink('lovedistance://tabs/settings/notifications')).toEqual({
+      kind: 'settings',
+      subsection: 'notifications',
+    });
+  });
+
+  it('round-trips settings ref to Expo path', () => {
+    const ref = { kind: 'settings' as const, subsection: 'relationship' as const };
+    expect(getPathFromRef(ref)).toBe('/(app)/(tabs)/settings/relationship');
+    expect(parseDeepLink('lovedistance://settings/relationship')).toEqual(ref);
+  });
+
+  it('parses notifications inbox deep link', () => {
+    expect(parseDeepLink('lovedistance://notifications')).toEqual({ kind: 'notifications' });
+    expect(parseDeepLink('lovedistance://tabs/notifications')).toEqual({ kind: 'notifications' });
+    expect(getPathFromRef({ kind: 'notifications' })).toBe('/(app)/notifications');
+  });
+
+  it('parses photo compose before generic photo id', () => {
+    expect(parseDeepLink('lovedistance://photo/compose')).toEqual({ kind: 'photo_compose' });
+    expect(getPathFromRef({ kind: 'photo_compose' })).toBe('/(app)/photo/compose');
+    expect(parseDeepLink('lovedistance://photo/album-1')).toEqual({
+      kind: 'photo',
+      id: 'album-1',
+    });
+  });
+
+  it('strips query string for path matching', () => {
+    expect(parseDeepLink('lovedistance://photo/compose?ritual=1')).toEqual({
+      kind: 'photo_compose',
+    });
+  });
 });

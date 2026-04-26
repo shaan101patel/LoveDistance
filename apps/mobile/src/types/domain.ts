@@ -17,6 +17,17 @@ export type CoupleProfile = {
   reunionDate?: string;
 };
 
+/** Quick text rituals (mock); not merged into presence or prompt threads. */
+export type RitualSignalKind = 'good_night' | 'miss_you';
+
+export type RitualSignalEntry = {
+  id: string;
+  kind: RitualSignalKind;
+  body: string;
+  authorId: string;
+  createdAt: string;
+};
+
 export type PromptAnswer = {
   userId: string;
   answer: string;
@@ -151,6 +162,32 @@ export type NotificationPrefs = {
   newPhoto: boolean;
   habitReminder: boolean;
   milestones: boolean;
+  /** Thread / prompt reaction nudges (mock). */
+  reactions: boolean;
+  /** Anniversary and date-milestone reminders (mock). */
+  anniversaries: boolean;
+  /** Reunion countdown milestones (mock). */
+  countdownUpdates: boolean;
+};
+
+/** In-app notification center rows; future push payloads map into this shape. */
+export type NotificationCategory =
+  | 'prompt'
+  | 'photo'
+  | 'reaction'
+  | 'habit'
+  | 'anniversary'
+  | 'countdown';
+
+export type NotificationInboxItem = {
+  id: string;
+  category: NotificationCategory;
+  title: string;
+  summary: string;
+  createdAt: string;
+  read: boolean;
+  /** Optional Expo Router path for row tap. */
+  href?: string;
 };
 
 /** Local-only privacy flags; a Supabase `profiles` row or `user_settings` would mirror this later. */
@@ -172,10 +209,21 @@ export type AppLockSettings = {
 
 export type AppTabName = 'home' | 'prompt' | 'photos' | 'calendar' | 'timeline' | 'settings';
 
+/** Settings stack screens under `(tabs)/settings/*` (deep link targets). */
+export type SettingsDeepLinkSubsection =
+  | 'notifications'
+  | 'privacy'
+  | 'profile'
+  | 'security'
+  | 'relationship';
+
 export type DeepLinkRef =
   | { kind: 'tab'; name: AppTabName }
   | { kind: 'prompt'; id: string }
   | { kind: 'memory'; id: string }
   | { kind: 'photo'; id: string }
   | { kind: 'habit'; id: string }
-  | { kind: 'invite'; token: string };
+  | { kind: 'invite'; token: string }
+  | { kind: 'settings'; subsection: SettingsDeepLinkSubsection }
+  | { kind: 'notifications' }
+  | { kind: 'photo_compose' };

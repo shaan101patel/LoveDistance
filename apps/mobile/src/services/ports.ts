@@ -4,7 +4,10 @@ import type {
   DeepLinkRef,
   Habit,
   MemoryItem,
+  NotificationInboxItem,
   NotificationPrefs,
+  RitualSignalEntry,
+  RitualSignalKind,
   TimelineMemoryFilter,
   PrivacySettings,
   PresencePost,
@@ -88,6 +91,11 @@ export type HabitService = {
   toggleHabitCompletion(habitId: string, date: string): Promise<Habit[]>;
 };
 
+export type RitualsService = {
+  logRitualSignal(kind: RitualSignalKind, body: string): Promise<RitualSignalEntry[]>;
+  listRecentRitualSignals(limit: number): Promise<RitualSignalEntry[]>;
+};
+
 export type TimelineService = {
   listMemories(filter?: TimelineMemoryFilter): Promise<MemoryItem[]>;
   getMemoryById(memoryId: string): Promise<MemoryItem | null>;
@@ -97,6 +105,12 @@ export type TimelineService = {
 export type NotificationPrefsService = {
   getPreferences(): Promise<NotificationPrefs>;
   updatePreferences(prefs: Partial<NotificationPrefs>): Promise<NotificationPrefs>;
+};
+
+export type NotificationInboxService = {
+  listInbox(limit?: number): Promise<NotificationInboxItem[]>;
+  markRead(ids: string[]): Promise<NotificationInboxItem[]>;
+  markAllRead(): Promise<NotificationInboxItem[]>;
 };
 
 /** Device-local preferences; mock uses `mockDb`; later replace with profile metadata + encrypted prefs. */
@@ -119,9 +133,11 @@ export type ServiceRegistry = {
   threadInteraction: ThreadInteractionService;
   presence: PresenceService;
   habits: HabitService;
+  rituals: RitualsService;
   timeline: TimelineService;
   followUpSuggestions: FollowUpSuggestionService;
   notificationPrefs: NotificationPrefsService;
+  notificationInbox: NotificationInboxService;
   userSettings: UserSettingsService;
   deepLinks: DeepLinkService;
 };

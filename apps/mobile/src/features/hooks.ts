@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useServices } from '@/services/ServiceContext';
-import type { CoupleProfile, PresencePost, TimelineMemoryFilter } from '@/types/domain';
+import type { CoupleProfile, PresencePost, RitualSignalKind, TimelineMemoryFilter } from '@/types/domain';
 
 /** Couple space for the signed-in user; null when unpaired. Invalidated after pairing / sign-out flows. */
 export function useCouple() {
@@ -247,6 +247,26 @@ export function useToggleHabit(month: string) {
   });
 }
 
+export function useRitualSignals(limit = 12) {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['rituals', 'signals', limit] as const,
+    queryFn: () => services.rituals.listRecentRitualSignals(limit),
+  });
+}
+
+export function useLogRitualSignal() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ kind, body }: { kind: RitualSignalKind; body: string }) =>
+      services.rituals.logRitualSignal(kind, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rituals', 'signals'] });
+    },
+  });
+}
+
 export function useTimeline(filter: TimelineMemoryFilter = 'all') {
   const services = useServices();
   return useQuery({
@@ -281,6 +301,36 @@ export function useNotificationPreferences() {
     },
   });
   return { query, mutation };
+}
+
+export function useNotificationInbox(limit = 50) {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['notifications', 'inbox', limit] as const,
+    queryFn: () => services.notificationInbox.listInbox(limit),
+  });
+}
+
+export function useMarkNotificationsRead() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => services.notificationInbox.markRead(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'inbox'] });
+    },
+  });
+}
+
+export function useMarkAllNotificationsRead() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => services.notificationInbox.markAllRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'inbox'] });
+    },
+  });
 }
 
 export function usePrivacySettings() {

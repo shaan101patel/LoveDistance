@@ -11,6 +11,7 @@ import {
   StreakPreviewPlaceholder,
   StoryHighlightsBlock,
 } from '@/components/home';
+import { ReunionCountdownCard, RitualShortcutsStrip } from '@/components/rituals';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useCouple, useCurrentUserId, useHabits, usePresenceFeed, useTodayPrompt } from '@/features/hooks';
@@ -27,6 +28,7 @@ import { spacing } from '@/theme/tokens';
 const quickLinks: { href: Href; label: string; hint: string }[] = [
   { href: '/(app)/(tabs)/photos', label: 'Photos', hint: 'Shared presence' },
   { href: '/(app)/(tabs)/calendar', label: 'Calendar', hint: 'Habits & time' },
+  { href: '/(app)/notifications', label: 'Alerts', hint: 'Notification center (mock)' },
   { href: '/(app)/(tabs)/settings', label: 'Settings', hint: 'You & the app' },
 ];
 
@@ -44,13 +46,6 @@ export default function HomeScreen() {
     meId && isMorningRitualCompleteForUser(habits, meId, todayYmd),
   );
   const partner = couple?.partner;
-  const reunion = couple?.reunionDate
-    ? new Date(couple.reunionDate).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    : null;
 
   const homeFeed = useMemo(() => {
     if (!couple || !thread || !meId) {
@@ -87,7 +82,6 @@ export default function HomeScreen() {
                 ? ` (${partner.displayName})`
                 : ''}
             </Text>
-            {reunion ? <Body>Next reunion (sample): {reunion}</Body> : null}
           </View>
 
           {showFeedSkeleton ? (
@@ -100,6 +94,8 @@ export default function HomeScreen() {
             </SectionCard>
           ) : homeFeed && thread && meId ? (
             <View style={{ gap: spacing.lg }}>
+              <ReunionCountdownCard reunionIso={couple.reunionDate} partnerFirstName={partner.firstName} />
+              <RitualShortcutsStrip partnerFirstName={partner.firstName} />
               <DailyPromptCard daily={homeFeed.daily} />
               {presencePosts?.[0] ? (
                 <LatestSharedPhotoBlock
