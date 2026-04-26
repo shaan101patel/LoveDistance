@@ -1,116 +1,215 @@
 import type { ServiceRegistry } from '@/services/ports';
 import { getPathFromRef, parseDeepLink } from '@/lib/deepLinking/deepLinkService';
-import {
-  filterPresencePostsInWeek,
-  weekMetaFromMondayYmd,
-} from '@/features/weeklyRecap/recapCandidateFilter';
-import { initialPresencePosts, mockRelationshipDashboardSnapshot } from '@/services/mock/mockData';
-import { isSupabaseConfigured } from '@/services/supabase/client';
+import { weekMetaFromMondayYmd } from '@/features/weeklyRecap/recapCandidateFilter';
+import { mockRelationshipDashboardSnapshot } from '@/services/mock/mockData';
+import { isSupabaseConfigured, supabaseClient } from '@/services/supabase/client';
+import { loadProfileRow, requireClient, toSession } from '@/services/supabase/helpers';
+import * as backend from '@/services/supabase/supabaseBackend';
+import type { Session, SubscriptionTier } from '@/types/domain';
 
-function notReady<T>(name: string): Promise<T> {
-  if (!isSupabaseConfigured) {
-    return Promise.reject(
-      new Error(
-        `Supabase mode is enabled but EXPO_PUBLIC_SUPABASE_URL and key are not configured for ${name}.`,
-      ),
-    );
+const FOLLOW_UP_SUGGESTIONS = [
+  'What was going through your mind in that moment?',
+  'I love that you shared this—what do you want to do more of together?',
+  'Should we make this a new little tradition for us?',
+];
+
+function suggestFollowUpsRotated(input: {
+  imageUri: string;
+  promptQuestion: string;
+  partnerName?: string;
+}): string[] {
+  void input.partnerName;
+  const n = (input.imageUri.length + input.promptQuestion.length) % FOLLOW_UP_SUGGESTIONS.length;
+  return [0, 1, 2].map((i) => FOLLOW_UP_SUGGESTIONS[(n + i) % FOLLOW_UP_SUGGESTIONS.length]);
+}
+
+async function refreshSession(): Promise<Session> {
+  const sb = requireClient();
+  const { data: sessionData, error: sessErr } = await sb.auth.getSession();
+  if (sessErr || !sessionData.session?.user) {
+    throw new Error(sessErr?.message ?? 'Not signed in');
   }
-  return Promise.reject(
-    new Error(`${name} is not implemented yet. Build frontend flows with mocks first.`),
-  );
+  const user = sessionData.session.user;
+  const profile = await loadProfileRow(user.id);
+  return toSession(user, profile);
 }
 
 export const supabaseServices: ServiceRegistry = {
   auth: {
-    getSession: () => notReady('auth.getSession'),
-    signIn: () => notReady('auth.signIn'),
-    signUp: () => notReady('auth.signUp'),
-    updateProfile: () => notReady('auth.updateProfile'),
-    signOut: () => notReady('auth.signOut'),
+    async getSession() {
+      if (!isSupabaseConfigured || !supabaseClient) return null;
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error || !data.session?.user) {
+        return null;
+      }
+      const profile = await loadProfileRow(data.session.user.id);
+      return toSession(data.session.user, profile);
+    },
+    async signIn({ email, password }) {
+      const sb = requireClient();
+      const trimmed = email.trim();
+      if (!trimmed || !password) {
+        throw new Error('Email and password are required');
+      }
+      const { data, error } = await sb.auth.signInWithPassword({ email: trimmed, password });
+      if (error || !data.user) {
+        throw new Error(error?.message ?? 'Sign in failed');
+      }
+      const profile = await loadProfileRow(data.user.id);
+      return toSession(data.user, profile);
+    },
+    async signUp({ email, password, firstName }) {
+      const sb = requireClient();
+      const trimmed = email.trim();
+      if (!trimmed || !password) {
+        throw new Error('Email and password are required');
+      }
+      if (!firstName?.trim()) {
+        throw new Error('First name is required');
+      }
+      const { data, error } = await sb.auth.signUp({
+        email: trimmed,
+        password,
+        options: { data: { first_name: firstName.trim() } },
+      });
+      if (error || !data.user) {
+        throw new Error(error?.message ?? 'Sign up failed');
+      }
+      const profile = await loadProfileRow(data.user.id);
+      return toSession(data.user, profile);
+    },
+    async updateProfile(partial) {
+      const sb = requireClient();
+      const { data: userData } = await sb.auth.getUser();
+      const user = userData.user;
+      if (!user) {
+        throw new Error('Not signed in');
+      }
+      const patch: { first_name?: string; display_name?: string | null } = {};
+      if (partial.firstName !== undefined) {
+        patch.first_name = partial.firstName.trim();
+      }
+      if (partial.displayName !== undefined) {
+        const d = partial.displayName.trim();
+        patch.display_name = d.length ? d : null;
+      }
+      if (Object.keys(patch).length > 0) {
+        const { error } = await sb.from('profiles').update(patch).eq('id', user.id);
+        if (error) {
+          throw new Error(error.message);
+        }
+      }
+      return refreshSession();
+    },
+    async signOut() {
+      const sb = requireClient();
+      const { error } = await sb.auth.signOut();
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
   },
   couple: {
-    getCouple: () => notReady('couple.getCouple'),
-    createInviteLink: () => notReady('couple.createInviteLink'),
-    acceptInvite: () => notReady('couple.acceptInvite'),
+    getCouple: () => backend.loadCompleteCoupleProfile(),
+    createInviteLink: () => backend.createInviteLinkRpc(),
+    acceptInvite: (token) => backend.acceptInviteWithEdge(token),
   },
   prompt: {
-    getTodayPrompt: () => notReady('prompt.getTodayPrompt'),
-    getPromptById: () => notReady('prompt.getPromptById'),
-    submitPromptAnswer: () => notReady('prompt.submitPromptAnswer'),
-    reactToPrompt: () => notReady('prompt.reactToPrompt'),
+    getTodayPrompt: () => backend.getTodayPrompt(),
+    getPromptById: (id) => backend.getPromptById(id),
+    submitPromptAnswer: (promptId, input) => backend.submitPromptAnswer(promptId, input),
+    reactToPrompt: (promptId, emoji) => backend.reactToPrompt(promptId, emoji),
   },
   threadInteraction: {
-    getThreadActivity: () => notReady('threadInteraction.getThreadActivity'),
-    addThreadReply: () => notReady('threadInteraction.addThreadReply'),
-    reactToThreadReply: () => notReady('threadInteraction.reactToThreadReply'),
+    getThreadActivity: (promptId) => backend.getThreadActivity(promptId),
+    addThreadReply: (input) => backend.addThreadReply(input),
+    reactToThreadReply: (input) => backend.reactToThreadReply(input),
   },
   presence: {
-    getLatestPosts: () => notReady('presence.getLatestPosts'),
-    sharePost: () => notReady('presence.sharePost'),
-    reactToPost: () => notReady('presence.reactToPost'),
+    getLatestPosts: () => backend.getLatestPosts(),
+    sharePost: (input) => backend.sharePost(input),
+    reactToPost: (postId) => backend.reactToPost(postId),
   },
   habits: {
-    getHabitsForMonth: () => notReady('habits.getHabitsForMonth'),
-    getHabitById: () => notReady('habits.getHabitById'),
-    toggleHabitCompletion: () => notReady('habits.toggleHabitCompletion'),
+    getHabitsForMonth: (monthKey) => backend.getHabitsForMonth(monthKey),
+    getHabitById: (habitId) => backend.getHabitById(habitId),
+    toggleHabitCompletion: (habitId, date) => backend.toggleHabitCompletion(habitId, date),
   },
   rituals: {
-    logRitualSignal: () => notReady('rituals.logRitualSignal'),
-    listRecentRitualSignals: () => notReady('rituals.listRecentRitualSignals'),
+    logRitualSignal: (kind, body) => backend.logRitualSignal(kind, body),
+    listRecentRitualSignals: (limit) => backend.listRecentRitualSignals(limit),
   },
   timeline: {
-    listMemories: () => notReady('timeline.listMemories'),
-    getMemoryById: () => notReady('timeline.getMemoryById'),
-    setMemoryFavorite: () => notReady('timeline.setMemoryFavorite'),
+    listMemories: (filter) => backend.listMemories(filter),
+    getMemoryById: (id) => backend.getMemoryById(id),
+    setMemoryFavorite: (id, fav) => backend.setMemoryFavorite(id, fav),
   },
   followUpSuggestions: {
-    suggestForReceivedPhoto: () => notReady('followUpSuggestions.suggestForReceivedPhoto'),
+    suggestForReceivedPhoto: async (input) => suggestFollowUpsRotated(input),
   },
   notificationPrefs: {
-    getPreferences: () => notReady('notificationPrefs.getPreferences'),
-    updatePreferences: () => notReady('notificationPrefs.updatePreferences'),
+    getPreferences: () => backend.getPreferences(),
+    updatePreferences: (prefs) => backend.updatePreferences(prefs),
   },
   notificationInbox: {
-    listInbox: () => notReady('notificationInbox.listInbox'),
-    markRead: () => notReady('notificationInbox.markRead'),
-    markAllRead: () => notReady('notificationInbox.markAllRead'),
+    listInbox: (limit) => backend.listInbox(limit),
+    markRead: (ids) => backend.markRead(ids),
+    markAllRead: () => backend.markAllRead(),
   },
   userSettings: {
-    getPrivacy: () => notReady('userSettings.getPrivacy'),
-    updatePrivacy: () => notReady('userSettings.updatePrivacy'),
-    getAppLock: () => notReady('userSettings.getAppLock'),
-    updateAppLock: () => notReady('userSettings.updateAppLock'),
+    getPrivacy: () => backend.getPrivacy(),
+    updatePrivacy: (partial) => backend.updatePrivacy(partial),
+    getAppLock: () => backend.getAppLock(),
+    updateAppLock: (partial) => backend.updateAppLock(partial),
   },
   deepLinks: {
     parseUrl: parseDeepLink,
     toPath: getPathFromRef,
   },
   relationshipDashboard: {
-    /** Placeholder: same mock snapshot until a Supabase-backed analytics API exists. */
     async getSnapshot() {
       return mockRelationshipDashboardSnapshot;
     },
   },
   subscription: {
-    /** Placeholder until RevenueCat / Stripe / server entitlements. */
     async getSubscription() {
-      return { tier: 'free' as const, renewsAtIso: null, source: 'store' as const };
+      const sb = requireClient();
+      const { data: userData } = await sb.auth.getUser();
+      const user = userData.user;
+      if (!user) {
+        return { tier: 'free' as const, renewsAtIso: null, source: 'store' as const };
+      }
+      const row = await loadProfileRow(user.id);
+      const tier = row?.subscription_tier === 'premium' ? ('premium' as const) : ('free' as const);
+      return { tier, renewsAtIso: null, source: 'store' as const };
+    },
+    async setMockTier(tier: SubscriptionTier) {
+      const sb = requireClient();
+      const { data: userData } = await sb.auth.getUser();
+      const user = userData.user;
+      if (!user) {
+        throw new Error('Not signed in');
+      }
+      const { error } = await sb
+        .from('profiles')
+        .update({ subscription_tier: tier })
+        .eq('id', user.id);
+      if (error) {
+        throw new Error(error.message);
+      }
+      return supabaseServices.subscription.getSubscription();
     },
   },
   weeklyRecap: {
-    /**
-     * Read-only recap UI: frozen seed posts + placeholder draft until recap API + LLM exist.
-     */
-    async listPhotoCandidatesForWeek(anchorIso) {
-      return filterPresencePostsInWeek([...initialPresencePosts], anchorIso);
-    },
+    listPhotoCandidatesForWeek: (anchorIso) => backend.listPhotoCandidatesForWeek(anchorIso),
     async buildRecapDraft({ weekStartYmd, selectedPhotoIds }) {
       const uniq = [...new Set(selectedPhotoIds)].slice(0, 5);
       if (uniq.length === 0) {
         throw new Error('Pick at least one photo for your recap.');
       }
       const week = weekMetaFromMondayYmd(weekStartYmd);
-      const byId = new Map(initialPresencePosts.map((p) => [p.id, p]));
+      const pool = await backend.getLatestPosts();
+      const byId = new Map(pool.map((p) => [p.id, p]));
       const selectedPhotos = uniq.map((id) => {
         const p = byId.get(id);
         if (!p) {

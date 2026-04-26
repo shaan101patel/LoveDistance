@@ -91,9 +91,13 @@ export default function PromptThreadScreen() {
     [threadActivity],
   );
 
-  const needsMorningGate =
-    Boolean(vm && vm.phase === 'awaitingMyAnswer' && meId && !habitsLoading) &&
-    !isMorningRitualCompleteForUser(habits, meId, todayYmd);
+  const needsMorningGate = Boolean(
+    vm &&
+      vm.phase === 'awaitingMyAnswer' &&
+      meId != null &&
+      !habitsLoading &&
+      !isMorningRitualCompleteForUser(habits, meId, todayYmd),
+  );
   const morningGateLoading = Boolean(
     vm && vm.phase === 'awaitingMyAnswer' && meId && habitsLoading,
   );
