@@ -1,19 +1,53 @@
-import { useCallback } from 'react';
-import { ActivityIndicator, FlatList, type ListRenderItem, RefreshControl, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  type ListRenderItem,
+  RefreshControl,
+  View,
+} from 'react-native';
 
-import { TimelineMemoryRow } from '@/components/timeline';
+import { MemoryTimelineFilterChips, TimelineMemoryRow } from '@/components/timeline';
+import { Input } from '@/components/primitives/Input';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useTimeline } from '@/features/hooks';
-import type { MemoryItem } from '@/types/domain';
+import type { MemoryItem, TimelineMemoryFilter } from '@/types/domain';
 import { spacing } from '@/theme/tokens';
 
 import { Button } from '@/components/primitives/Button';
 
+function emptyBody(filter: TimelineMemoryFilter, hasSource: boolean): string {
+  if (!hasSource) {
+    if (filter === 'all') {
+      return 'Nothing here yet. Answer a prompt (with an optional photo) or share to the feed to see entries.';
+    }
+    if (filter === 'favorites') {
+      return 'No favorites yet. Saved moments will show up here.';
+    }
+    return 'Nothing in this category yet.';
+  }
+  return 'No memories match your search.';
+}
+
 export default function TimelineScreen() {
   const theme = useTheme();
-  const { data: memories, isLoading, isError, isRefetching, refetch } = useTimeline('all');
+  const [filter, setFilter] = useState<TimelineMemoryFilter>('all');
+  const [search, setSearch] = useState('');
+  const { data: memories, isLoading, isError, isRefetching, refetch } = useTimeline(filter);
+
+  const baseList = memories ?? [];
+  const displayMemories = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) {
+      return baseList;
+    }
+    return baseList.filter(
+      (m) =>
+        m.title.toLowerCase().includes(q) || m.summary.toLowerCase().includes(q),
+    );
+  }, [baseList, search]);
 
   const renderItem: ListRenderItem<MemoryItem> = useCallback(
     ({ item, index }) => (
@@ -22,6 +56,21 @@ export default function TimelineScreen() {
       </View>
     ),
     [],
+  );
+
+  const listHeader = useMemo(
+    () => (
+      <View style={{ gap: spacing.md, marginBottom: spacing.md }}>
+        <MemoryTimelineFilterChips onChange={setFilter} value={filter} />
+        <Input
+          accessibilityLabel="Search memories"
+          onChangeText={setSearch}
+          placeholder="Search memories…"
+          value={search}
+        />
+      </View>
+    ),
+    [filter, search],
   );
 
   if (isLoading) {
@@ -57,6 +106,9 @@ export default function TimelineScreen() {
     );
   }
 
+  const hasSource = baseList.length > 0;
+  const emptyText = emptyBody(filter, hasSource);
+
   return (
     <SectionScaffold
       kicker="Together"
@@ -65,11 +117,10 @@ export default function TimelineScreen() {
       title="Timeline"
     >
       <FlatList
-        data={memories ?? []}
+        data={displayMemories}
         keyExtractor={(m) => m.id}
-        ListEmptyComponent={
-          <Body>Nothing here yet. Answer a prompt (with an optional photo) or share to the feed to see entries.</Body>
-        }
+        ListEmptyComponent={emptyText ? <Body>{emptyText}</Body> : null}
+        ListHeaderComponent={listHeader}
         refreshControl={
           <RefreshControl
             onRefresh={() => {

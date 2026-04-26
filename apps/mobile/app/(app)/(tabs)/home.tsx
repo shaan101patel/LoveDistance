@@ -9,11 +9,14 @@ import {
   LatestSharedPhotoBlock,
   PartnerActivitySection,
   StreakPreviewPlaceholder,
+  StoryHighlightsBlock,
 } from '@/components/home';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
-import { useCouple, useCurrentUserId, usePresenceFeed, useTodayPrompt } from '@/features/hooks';
+import { useCouple, useCurrentUserId, useHabits, usePresenceFeed, useTodayPrompt } from '@/features/hooks';
 import { composeHomeFeed } from '@/features/home/homeFeedComposer';
+import { isMorningRitualCompleteForUser } from '@/features/rituals/morningRitual';
+import { formatYmdLocal, toMonthKey } from '@/lib/calendarDates';
 import {
   devSimulatePartnerTodayAnswer,
   devSimulatePartnerTodayReaction,
@@ -34,6 +37,12 @@ export default function HomeScreen() {
   const { data: thread, isLoading: promptLoading, isError: promptError } = useTodayPrompt();
   const { data: presencePosts } = usePresenceFeed();
   const { meId, isSessionLoading: sessionUserLoading } = useCurrentUserId();
+  const monthKey = toMonthKey(new Date());
+  const { data: habits, isLoading: habitsLoading } = useHabits(monthKey);
+  const todayYmd = formatYmdLocal(new Date());
+  const morningRitualDone = Boolean(
+    meId && isMorningRitualCompleteForUser(habits, meId, todayYmd),
+  );
   const partner = couple?.partner;
   const reunion = couple?.reunionDate
     ? new Date(couple.reunionDate).toLocaleDateString(undefined, {
@@ -52,11 +61,12 @@ export default function HomeScreen() {
       meId,
       partnerId: couple.partner.id,
       partnerFirstName: couple.partner.firstName,
+      morningRitualDone,
     });
-  }, [couple, thread, meId]);
+  }, [couple, thread, meId, morningRitualDone]);
 
   const showFeedSkeleton =
-    Boolean(partner) && (coupleLoading || sessionUserLoading || promptLoading);
+    Boolean(partner) && (coupleLoading || sessionUserLoading || promptLoading || habitsLoading);
 
   return (
     <SectionScaffold
@@ -98,6 +108,7 @@ export default function HomeScreen() {
                   post={presencePosts[0]}
                 />
               ) : null}
+              <StoryHighlightsBlock />
               <PartnerActivitySection model={homeFeed.partnerActivity} />
               <StreakPreviewPlaceholder model={homeFeed.streak} />
             </View>

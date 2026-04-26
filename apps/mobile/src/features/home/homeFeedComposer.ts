@@ -1,6 +1,7 @@
 import type { PromptThread } from '@/types/domain';
 
 export type DailyPromptCardState =
+  | 'gated'
   | 'unanswered'
   | 'answeredWaiting'
   | 'unlocked'
@@ -44,7 +45,7 @@ export function deriveDailyPromptState(
   thread: PromptThread,
   meId: string,
   partnerId: string,
-): DailyPromptCardState {
+): Exclude<DailyPromptCardState, 'gated'> {
   const iAnswered = hasUserAnswered(thread, meId);
   if (!iAnswered) {
     return 'unanswered';
@@ -59,14 +60,42 @@ export function deriveDailyPromptState(
   return 'unlocked';
 }
 
+/**
+ * Home card state: the daily question stays visually locked until the user completes
+ * their side of the morning wake habit for today (when not yet answered the prompt).
+ */
+export function deriveHomeDailyPromptState(
+  thread: PromptThread,
+  meId: string,
+  partnerId: string,
+  morningRitualDone: boolean,
+): DailyPromptCardState {
+  const base = deriveDailyPromptState(thread, meId, partnerId);
+  if (base === 'unanswered' && !morningRitualDone) {
+    return 'gated';
+  }
+  return base;
+}
+
 function buildDailyCopy(
   state: DailyPromptCardState,
   question: string,
   promptId: string,
   partnerFirstName: string,
 ): HomeFeedViewModel['daily'] {
-  const kicker = 'Today';
-  const base = { promptId, question, kicker };
+  const kickerToday = 'Today';
+  if (state === 'gated') {
+    return {
+      promptId,
+      question: 'Your question unlocks after a quick morning check-in. Same small ritual, even when you are hours apart.',
+      kicker: kickerToday,
+      state: 'gated',
+      statusLine:
+        'A gentle nudge: tap below when you are up, then the daily question opens for you. No push yet—this is a reminder-friendly preview.',
+      ctaLabel: 'Morning check-in',
+    };
+  }
+  const base = { promptId, question, kicker: kickerToday };
   switch (state) {
     case 'unanswered':
       return {
@@ -136,6 +165,8 @@ type ComposeInput = {
   meId: string;
   partnerId: string;
   partnerFirstName: string;
+  /** User has completed their side of the morning wake habit for today. */
+  morningRitualDone: boolean;
 };
 
 /**
@@ -143,8 +174,8 @@ type ComposeInput = {
  * Replace placeholder activity/streak from this result when you wire real APIs.
  */
 export function composeHomeFeed(input: ComposeInput): HomeFeedViewModel {
-  const { thread, meId, partnerId, partnerFirstName } = input;
-  const state = deriveDailyPromptState(thread, meId, partnerId);
+  const { thread, meId, partnerId, partnerFirstName, morningRitualDone } = input;
+  const state = deriveHomeDailyPromptState(thread, meId, partnerId, morningRitualDone);
   return {
     daily: buildDailyCopy(state, thread.question, thread.promptId, partnerFirstName),
     partnerActivity: buildPlaceholderActivity(partnerFirstName),

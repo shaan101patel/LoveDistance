@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useServices } from '@/services/ServiceContext';
-import type { CoupleProfile, PresencePost } from '@/types/domain';
+import type { CoupleProfile, PresencePost, TimelineMemoryFilter } from '@/types/domain';
 
 /** Couple space for the signed-in user; null when unpaired. Invalidated after pairing / sign-out flows. */
 export function useCouple() {
@@ -214,25 +214,56 @@ export function useHabits(month: string) {
   });
 }
 
+/**
+ * Single habit for deep links / detail (backed by mock `getHabitById` or future API).
+ */
+export function useHabit(habitId: string | undefined) {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['habit', 'detail', habitId] as const,
+    queryFn: () => {
+      if (!habitId) {
+        throw new Error('habitId is required');
+      }
+      return services.habits.getHabitById(habitId);
+    },
+    enabled: Boolean(habitId),
+  });
+}
+
 export function useToggleHabit(month: string) {
   const services = useServices();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ habitId, date }: { habitId: string; date: string }) =>
       services.habits.toggleHabitCompletion(habitId, date),
-    onSuccess: (next) => {
+    onSuccess: (next, { habitId }) => {
       queryClient.setQueryData(['habits', month], next);
+      const one = next.find((h) => h.id === habitId);
+      if (one) {
+        queryClient.setQueryData(['habit', 'detail', habitId], one);
+      }
     },
   });
 }
 
-export function useTimeline(
-  filter: 'all' | 'prompt' | 'photo' | 'gratitude' | 'milestone' = 'all',
-) {
+export function useTimeline(filter: TimelineMemoryFilter = 'all') {
   const services = useServices();
   return useQuery({
     queryKey: ['timeline', filter],
     queryFn: () => services.timeline.listMemories(filter),
+  });
+}
+
+export function useSetMemoryFavorite() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ memoryId, isFavorite }: { memoryId: string; isFavorite: boolean }) =>
+      services.timeline.setMemoryFavorite(memoryId, isFavorite),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['timeline'] });
+    },
   });
 }
 

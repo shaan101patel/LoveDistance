@@ -45,7 +45,9 @@ export function DailyPromptCard({ daily }: Props) {
   return (
     <Card elevated>
       <View style={styles.kickerPill}>
-        <Text style={styles.kickerText}>{daily.kicker} · Daily prompt</Text>
+        <Text style={styles.kickerText}>
+          {daily.kicker} · {daily.state === 'gated' ? 'Your rhythm' : 'Daily prompt'}
+        </Text>
       </View>
       <Text style={styles.question}>{daily.question}</Text>
       {daily.state === 'completed' ? (
@@ -57,7 +59,11 @@ export function DailyPromptCard({ daily }: Props) {
       <View style={styles.cta}>
         <Button
           label={daily.ctaLabel}
-          onPress={() => router.push(`/(app)/prompt/${daily.promptId}` as Href)}
+          onPress={() =>
+            daily.state === 'gated'
+              ? router.push('/(app)/wake-check-in' as Href)
+              : router.push(`/(app)/prompt/${daily.promptId}` as Href)
+          }
         />
       </View>
     </Card>

@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 
+import { Button } from '@/components/primitives/Button';
 import {
   PartnerAnswerPanel,
   PhotoFollowUpSuggestions,
@@ -25,6 +26,7 @@ import {
   useAddThreadReply,
   useCouple,
   useCurrentUserId,
+  useHabits,
   usePromptReaction,
   usePromptThread,
   useReactToThreadReply,
@@ -33,6 +35,8 @@ import {
 } from '@/features/hooks';
 import { buildReplyTree } from '@/features/prompts/threadRepliesLayout';
 import { buildPromptThreadViewModel } from '@/features/prompts/threadViewModel';
+import { isMorningRitualCompleteForUser } from '@/features/rituals/morningRitual';
+import { formatYmdLocal, toMonthKey } from '@/lib/calendarDates';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
@@ -52,6 +56,9 @@ export default function PromptThreadScreen() {
   const { data: couple } = useCouple();
   const { meId } = useCurrentUserId();
   const { data: thread, isLoading, isError, isSuccess } = usePromptThread(promptId);
+  const monthKey = toMonthKey(new Date());
+  const { data: habits, isLoading: habitsLoading } = useHabits(monthKey);
+  const todayYmd = formatYmdLocal(new Date());
   const submit = useSubmitPrompt();
   const promptReaction = usePromptReaction();
   const addThreadReply = useAddThreadReply();
@@ -83,6 +90,14 @@ export default function PromptThreadScreen() {
     () => (threadActivity?.replies.length ? buildReplyTree(threadActivity.replies) : []),
     [threadActivity],
   );
+
+  const needsMorningGate =
+    Boolean(vm && vm.phase === 'awaitingMyAnswer' && meId && !habitsLoading) &&
+    !isMorningRitualCompleteForUser(habits, meId, todayYmd);
+  const morningGateLoading = Boolean(
+    vm && vm.phase === 'awaitingMyAnswer' && meId && habitsLoading,
+  );
+  const useGateStyleHeading = Boolean(needsMorningGate || morningGateLoading);
 
   const styles = useMemo(
     () =>
@@ -181,12 +196,29 @@ export default function PromptThreadScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {vm.category ? <PromptCategoryChip label={vm.category.label} /> : null}
+        {vm.category && !useGateStyleHeading ? <PromptCategoryChip label={vm.category.label} /> : null}
         <View style={{ gap: spacing.xs }}>
-          <Heading>{vm.question}</Heading>
-          <Text style={styles.myLabel} accessibilityLabel="Prompt date">
-            {thread.date}
-          </Text>
+          {useGateStyleHeading ? (
+            <>
+              <Heading>
+                {morningGateLoading
+                  ? 'Almost there…'
+                  : 'Your question unlocks after a quick check-in'}
+              </Heading>
+              <Body>
+                {morningGateLoading
+                  ? 'Checking your morning habit in the app…'
+                  : 'Same small morning ritual you use on Home: tap below, then you can read and answer today’s prompt. Your partner can still be asleep in another time zone.'}
+              </Body>
+            </>
+          ) : (
+            <>
+              <Heading>{vm.question}</Heading>
+              <Text style={styles.myLabel} accessibilityLabel="Prompt date">
+                {thread.date}
+              </Text>
+            </>
+          )}
         </View>
 
         {vm.phase === 'unlocked' ? (
@@ -274,7 +306,29 @@ export default function PromptThreadScreen() {
           </>
         ) : null}
 
-        {vm.phase === 'awaitingMyAnswer' ? (
+        {vm.phase === 'awaitingMyAnswer' && morningGateLoading ? (
+          <SectionCard>
+            <ActivityIndicator color={theme.colors.primary} size="large" accessibilityLabel="Loading" />
+          </SectionCard>
+        ) : null}
+
+        {vm.phase === 'awaitingMyAnswer' && needsMorningGate ? (
+          <SectionCard>
+            <Text style={styles.myLabel}>Step 1</Text>
+            <Button
+              label="Morning check-in"
+              onPress={() => router.push('/(app)/wake-check-in' as Href)}
+            />
+            <View style={{ marginTop: spacing.md }}>
+              <PartnerAnswerPanel
+                row={vm.partnerRow}
+                title={partnerName === 'Partner' ? "Partner's space" : `${partnerName}’s answer`}
+              />
+            </View>
+          </SectionCard>
+        ) : null}
+
+        {vm.phase === 'awaitingMyAnswer' && !needsMorningGate && !morningGateLoading ? (
           <>
             <SectionCard>
               <Text style={styles.myLabel}>Your answer</Text>

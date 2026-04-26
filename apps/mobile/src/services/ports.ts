@@ -5,6 +5,7 @@ import type {
   Habit,
   MemoryItem,
   NotificationPrefs,
+  TimelineMemoryFilter,
   PrivacySettings,
   PresencePost,
   PromptThread,
@@ -81,13 +82,16 @@ export type PresenceService = {
 };
 
 export type HabitService = {
-  getHabitsForMonth(month: string): Promise<Habit[]>;
+  /** `monthKey` is `YYYY-MM` for a future month-scoped API; mock may return all habits. */
+  getHabitsForMonth(monthKey: string): Promise<Habit[]>;
+  getHabitById(habitId: string): Promise<Habit | null>;
   toggleHabitCompletion(habitId: string, date: string): Promise<Habit[]>;
 };
 
 export type TimelineService = {
-  listMemories(filter?: MemoryItem['type'] | 'all'): Promise<MemoryItem[]>;
+  listMemories(filter?: TimelineMemoryFilter): Promise<MemoryItem[]>;
   getMemoryById(memoryId: string): Promise<MemoryItem | null>;
+  setMemoryFavorite(memoryId: string, isFavorite: boolean): Promise<MemoryItem>;
 };
 
 export type NotificationPrefsService = {

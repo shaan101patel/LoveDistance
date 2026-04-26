@@ -43,6 +43,7 @@ export default function AppLayout() {
       <Stack.Screen name="photo/compose" options={{ title: 'New photo' }} />
       <Stack.Screen name="photo/[photoId]" options={{ title: 'Photo' }} />
       <Stack.Screen name="habit/[habitId]" options={{ title: 'Habit' }} />
+      <Stack.Screen name="wake-check-in" options={{ title: 'Morning check-in' }} />
       <Stack.Screen name="design-system" options={{ title: 'Design system', headerShown: false }} />
     </Stack>
   );

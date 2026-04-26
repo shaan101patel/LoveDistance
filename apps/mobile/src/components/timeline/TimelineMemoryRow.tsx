@@ -1,13 +1,12 @@
 import { useRouter, type Href } from 'expo-router';
-import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { Image } from 'expo-image';
-
-import { Card } from '@/components/primitives/Card';
-import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { FavoriteMemoryButton } from '@/components/timeline/FavoriteMemoryButton';
+import { MemoryItemCard } from '@/components/timeline/MemoryItemCard';
+import { MilestoneMemoryCard } from '@/components/timeline/MilestoneMemoryCard';
+import { useSetMemoryFavorite } from '@/features/hooks';
 import type { MemoryItem } from '@/types/domain';
+import { spacing } from '@/theme/tokens';
 
 function hrefFromRef(ref: string): Href {
   const idx = ref.indexOf(':');
@@ -35,64 +34,46 @@ type Props = {
 };
 
 export function TimelineMemoryRow({ item }: Props) {
-  const theme = useTheme();
   const router = useRouter();
   const href = hrefFromRef(item.deepLinkRef);
+  const { mutate, isPending } = useSetMemoryFavorite();
 
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        row: { flexDirection: 'row' as const, gap: spacing.md, alignItems: 'flex-start' as const },
-        thumb: {
-          width: 56,
-          height: 56,
-          borderRadius: radius.md,
-          backgroundColor: theme.colors.surfaceAlt,
-        },
-        textCol: { flex: 1, minWidth: 0, gap: 4 },
-        title: { ...theme.type.body, color: theme.colors.textPrimary, fontWeight: '600' as const },
-        summary: { ...theme.type.bodySm, color: theme.colors.textSecondary },
-        date: { ...theme.type.caption, color: theme.colors.textMuted },
-        type: { ...theme.type.caption, color: theme.colors.textMuted, textTransform: 'capitalize' as const },
-      }),
-    [theme],
-  );
+  const onNavigate = () => router.push(href);
+  const onFavorite = () => mutate({ memoryId: item.id, isFavorite: !item.isFavorite });
+
+  if (item.type === 'milestone') {
+    return (
+      <View
+        style={{
+          flexDirection: 'row' as const,
+          alignItems: 'flex-start' as const,
+          gap: spacing.xs,
+        }}
+      >
+        <Pressable
+          accessibilityLabel={`Open milestone: ${item.title}`}
+          onPress={onNavigate}
+          style={({ pressed }) => [{ flex: 1, minWidth: 0, opacity: pressed ? 0.9 : 1 }]}
+        >
+          <MilestoneMemoryCard item={item} />
+        </Pressable>
+        <View style={{ paddingTop: spacing.sm }}>
+          <FavoriteMemoryButton
+            disabled={isPending}
+            isFavorite={item.isFavorite}
+            onPress={onFavorite}
+          />
+        </View>
+      </View>
+    );
+  }
 
   return (
-    <Pressable
-      accessibilityLabel={`Open ${item.type}: ${item.title}`}
-      onPress={() => router.push(href)}
-    >
-      <Card elevated={false} style={{ padding: spacing.md }}>
-        <View style={styles.row}>
-          {item.imageUri ? (
-            <Image
-              contentFit="cover"
-              source={{ uri: item.imageUri }}
-              style={styles.thumb}
-              transition={200}
-            />
-          ) : (
-            <View style={styles.thumb} />
-          )}
-          <View style={styles.textCol}>
-            <Text style={styles.type}>{item.type}</Text>
-            <Text numberOfLines={2} style={styles.title}>
-              {item.title}
-            </Text>
-            <Text numberOfLines={2} style={styles.summary}>
-              {item.summary}
-            </Text>
-            <Text style={styles.date}>
-              {new Date(item.createdAt).toLocaleString(undefined, {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </Text>
-          </View>
-        </View>
-      </Card>
-    </Pressable>
+    <MemoryItemCard
+      favoriteDisabled={isPending}
+      item={item}
+      onFavoritePress={onFavorite}
+      onRowPress={onNavigate}
+    />
   );
 }

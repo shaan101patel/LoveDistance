@@ -1,5 +1,5 @@
 import type { ServiceRegistry } from '@/services/ports';
-import type { Session, UserProfile } from '@/types/domain';
+import type { Session, TimelineMemoryFilter, UserProfile } from '@/types/domain';
 import {
   cloneThreadActivity,
   initialAppLock,
@@ -13,6 +13,7 @@ import {
   upsertPromptPhotoFusionMemory,
 } from '@/services/mock/mockData';
 import { getPathFromRef, parseDeepLink } from '@/lib/deepLinking/deepLinkService';
+import { isUserAllowedToToggleHabit } from '@/features/habits/habitPolicy';
 
 async function withLatency<T>(result: T): Promise<T> {
   await new Promise((resolve) => setTimeout(resolve, 250));
@@ -315,34 +316,53 @@ export const mockServices: ServiceRegistry = {
     },
   },
   habits: {
-    async getHabitsForMonth() {
+    async getHabitsForMonth(monthKey) {
+      void monthKey;
       return withLatency([...mockDb.habits]);
     },
+    async getHabitById(habitId) {
+      const found = mockDb.habits.find((h) => h.id === habitId) ?? null;
+      return withLatency(found);
+    },
     async toggleHabitCompletion(habitId, date) {
-      const userId = mockDb.session?.user.id ?? mockMe.id;
-      mockDb.habits = mockDb.habits.map((habit) => {
-        if (habit.id !== habitId) {
-          return habit;
+      const meId = mockDb.couple?.meId ?? mockMe.id;
+      const partnerId = mockDb.couple?.partner.id ?? mockPartner.id;
+      const actor = mockDb.session?.user.id ?? mockMe.id;
+      const habit = mockDb.habits.find((h) => h.id === habitId);
+      if (!habit) {
+        throw new Error('Habit not found.');
+      }
+      if (!isUserAllowedToToggleHabit(habit, actor, { meId, partnerId })) {
+        throw new Error('This habit is for your partner; only they can check it off in this mock.');
+      }
+      mockDb.habits = mockDb.habits.map((h) => {
+        if (h.id !== habitId) {
+          return h;
         }
-        const current = habit.completionsByDate[date] ?? [];
-        const nextUsers = current.includes(userId)
-          ? current.filter((id) => id !== userId)
-          : [...current, userId];
+        const current = h.completionsByDate[date] ?? [];
+        const next = current.includes(actor)
+          ? current.filter((id) => id !== actor)
+          : [...current, actor];
+        const allowed = new Set(
+          h.type === 'mine' ? [meId] : h.type === 'yours' ? [partnerId] : [meId, partnerId],
+        );
+        const cleaned = next.filter((id) => allowed.has(id));
         return {
-          ...habit,
-          completionsByDate: {
-            ...habit.completionsByDate,
-            [date]: nextUsers,
-          },
+          ...h,
+          completionsByDate: { ...h.completionsByDate, [date]: cleaned },
         };
       });
       return withLatency([...mockDb.habits]);
     },
   },
   timeline: {
-    async listMemories(filter = 'all') {
+    async listMemories(filter: TimelineMemoryFilter = 'all') {
       const base =
-        filter === 'all' ? mockDb.memories : mockDb.memories.filter((item) => item.type === filter);
+        filter === 'all'
+          ? mockDb.memories
+          : filter === 'favorites'
+            ? mockDb.memories.filter((item) => item.isFavorite)
+            : mockDb.memories.filter((item) => item.type === filter);
       const sorted = [...base].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
@@ -351,6 +371,15 @@ export const mockServices: ServiceRegistry = {
     async getMemoryById(memoryId) {
       const found = mockDb.memories.find((item) => item.id === memoryId) ?? null;
       return withLatency(found);
+    },
+    async setMemoryFavorite(memoryId, isFavorite) {
+      const i = mockDb.memories.findIndex((m) => m.id === memoryId);
+      if (i < 0) {
+        return Promise.reject(new Error(`Memory not found: ${memoryId}`));
+      }
+      const next = { ...mockDb.memories[i], isFavorite };
+      mockDb.memories = [...mockDb.memories.slice(0, i), next, ...mockDb.memories.slice(i + 1)];
+      return withLatency(next);
     },
   },
   followUpSuggestions: {

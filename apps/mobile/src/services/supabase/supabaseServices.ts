@@ -46,11 +46,13 @@ export const supabaseServices: ServiceRegistry = {
   },
   habits: {
     getHabitsForMonth: () => notReady('habits.getHabitsForMonth'),
+    getHabitById: () => notReady('habits.getHabitById'),
     toggleHabitCompletion: () => notReady('habits.toggleHabitCompletion'),
   },
   timeline: {
     listMemories: () => notReady('timeline.listMemories'),
     getMemoryById: () => notReady('timeline.getMemoryById'),
+    setMemoryFavorite: () => notReady('timeline.setMemoryFavorite'),
   },
   followUpSuggestions: {
     suggestForReceivedPhoto: () => notReady('followUpSuggestions.suggestForReceivedPhoto'),

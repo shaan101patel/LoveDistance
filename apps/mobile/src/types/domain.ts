@@ -90,15 +90,47 @@ export type PresencePost = {
 
 export type HabitType = 'mine' | 'yours' | 'ours';
 
+/**
+ * How a day counts as “complete” for streaks/goals.
+ * - `both_required` (typical for shared “ours” rituals): both partners’ ids appear in `completionsByDate[date]`.
+ * - `either_partner`: the day is satisfied with at least one partner’s check-in; for `mine` / `yours` only the responsible person’s id is used.
+ */
+export type HabitCompletionPolicy = 'either_partner' | 'both_required';
+
+/**
+ * Light-weight goal for UI; future API might store as JSON.
+ * Omit or leave unset when the habit has no target.
+ */
+export type HabitGoal =
+  | { kind: 'weekly_completions'; targetCount: number }
+  | { kind: 'streak_target'; targetDays: number };
+
 export type Habit = {
   id: string;
   title: string;
   type: HabitType;
-  requiresBothPartners: boolean;
+  completionPolicy: HabitCompletionPolicy;
+  /** Optional; absent means no goal beyond showing streaks. */
+  goal?: HabitGoal;
+  /** Date key `YYYY-MM-DD` to user ids who toggled that day. */
   completionsByDate: Record<string, string[]>;
 };
 
+/**
+ * Optional derived snapshot for list/detail; compute client-side or return from an API later.
+ */
+export type HabitProgressSnapshot = {
+  habit: Habit;
+  currentStreak: number;
+  longestStreak: number;
+};
+
 export type MemoryType = 'prompt' | 'photo' | 'gratitude' | 'milestone';
+
+export type MilestoneKind = 'anniversary' | 'trip' | 'streak_win' | 'notable';
+
+/** `favorites` filters by `MemoryItem.isFavorite` (cross-type), not a stored `type`. */
+export type TimelineMemoryFilter = 'all' | MemoryType | 'favorites';
 
 export type MemoryItem = {
   id: string;
@@ -108,6 +140,8 @@ export type MemoryItem = {
   createdAt: string;
   deepLinkRef: string;
   isFavorite: boolean;
+  /** Set when `type === 'milestone'`; groups UI and future API row shape. */
+  milestoneKind?: MilestoneKind;
   /** Timeline thumbnail (e.g. prompt answer with photo). */
   imageUri?: string;
 };
