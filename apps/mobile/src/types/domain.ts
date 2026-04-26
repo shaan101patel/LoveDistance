@@ -23,13 +23,55 @@ export type PromptAnswer = {
   submittedAt: string;
 };
 
+export type PromptThreadCategory = {
+  id: string;
+  label: string;
+};
+
 export type PromptThread = {
   promptId: string;
   date: string;
   question: string;
+  /** Optional group label for UI (e.g. daily theme); future API can return this. */
+  category?: PromptThreadCategory;
   answers: PromptAnswer[];
   isRevealed: boolean;
   reactions: { id: string; userId: string; emoji: string }[];
+};
+
+/** Reactions on a follow-up reply (separate from prompt-level `PromptThread.reactions`). */
+export type ThreadReplyReaction = {
+  id: string;
+  userId: string;
+  emoji: string;
+};
+
+/**
+ * Post-unlock follow-up text; `parentReplyId` null = top-level under the prompt thread.
+ * Kept separate from `PromptThread` / `PromptAnswer` for backend mapping.
+ */
+export type PromptThreadReply = {
+  id: string;
+  promptId: string;
+  parentReplyId: string | null;
+  authorId: string;
+  body: string;
+  createdAt: string;
+  reactions: ThreadReplyReaction[];
+};
+
+/** UI-only slot until real recording and storage exist. */
+export type VoiceNotePlaceholder = {
+  id: string;
+  promptId: string;
+  kind: 'placeholder';
+  label: string;
+};
+
+export type PromptThreadActivity = {
+  promptId: string;
+  replies: PromptThreadReply[];
+  voiceNotePlaceholders: VoiceNotePlaceholder[];
 };
 
 export type PresencePost = {

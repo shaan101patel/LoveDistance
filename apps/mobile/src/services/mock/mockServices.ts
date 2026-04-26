@@ -1,6 +1,7 @@
 import type { ServiceRegistry } from '@/services/ports';
 import type { Session, UserProfile } from '@/types/domain';
 import {
+  cloneThreadActivity,
   initialAppLock,
   initialPrefs,
   initialPrivacy,
@@ -8,6 +9,7 @@ import {
   mockMe,
   mockPartner,
   refreshRevealState,
+  resetThreadActivityToInitial,
 } from '@/services/mock/mockData';
 import { getPathFromRef, parseDeepLink } from '@/lib/deepLinking/deepLinkService';
 
@@ -93,6 +95,7 @@ export const mockServices: ServiceRegistry = {
       mockDb.prefs = { ...initialPrefs };
       mockDb.privacy = { ...initialPrivacy };
       mockDb.appLock = { ...initialAppLock };
+      resetThreadActivityToInitial();
       return withLatency(undefined);
     },
   },
@@ -157,6 +160,12 @@ export const mockServices: ServiceRegistry = {
     async getTodayPrompt() {
       return withLatency({ ...mockDb.prompt });
     },
+    async getPromptById(promptId: string) {
+      if (promptId !== mockDb.prompt.promptId) {
+        return withLatency(null);
+      }
+      return withLatency({ ...mockDb.prompt });
+    },
     async submitPromptAnswer(promptId, answer) {
       const existing = mockDb.prompt.answers.find(
         (item) => item.userId === (mockDb.session?.user.id ?? mockMe.id),
@@ -167,13 +176,6 @@ export const mockServices: ServiceRegistry = {
         mockDb.prompt.answers.push({
           userId: mockDb.session?.user.id ?? mockMe.id,
           answer,
-          submittedAt: new Date().toISOString(),
-        });
-      }
-      if (!mockDb.prompt.answers.find((item) => item.userId === mockPartner.id)) {
-        mockDb.prompt.answers.push({
-          userId: mockPartner.id,
-          answer: 'I felt close when we laughed on the call last night.',
           submittedAt: new Date().toISOString(),
         });
       }
@@ -193,6 +195,68 @@ export const mockServices: ServiceRegistry = {
         throw new Error('Prompt id mismatch in mock service.');
       }
       return withLatency({ ...mockDb.prompt });
+    },
+  },
+  threadInteraction: {
+    async getThreadActivity(promptId: string) {
+      if (promptId !== mockDb.prompt.promptId) {
+        return withLatency(null);
+      }
+      return withLatency(cloneThreadActivity(mockDb.threadActivity));
+    },
+    async addThreadReply({ promptId, body, parentReplyId = null }) {
+      if (promptId !== mockDb.prompt.promptId) {
+        throw new Error('Unknown prompt for thread activity.');
+      }
+      const text = body.trim();
+      if (!text) {
+        throw new Error('Message cannot be empty.');
+      }
+      if (parentReplyId) {
+        const parent = mockDb.threadActivity.replies.find((r) => r.id === parentReplyId);
+        if (!parent) {
+          throw new Error('Parent reply not found.');
+        }
+      }
+      const id = `reply-${Date.now()}`;
+      const authorId = mockDb.session?.user.id ?? mockMe.id;
+      const next: (typeof mockDb.threadActivity.replies)[number] = {
+        id,
+        promptId,
+        parentReplyId: parentReplyId ?? null,
+        authorId,
+        body: text,
+        createdAt: new Date().toISOString(),
+        reactions: [],
+      };
+      mockDb.threadActivity = {
+        ...mockDb.threadActivity,
+        replies: [...mockDb.threadActivity.replies, next],
+      };
+      return withLatency(cloneThreadActivity(mockDb.threadActivity));
+    },
+    async reactToThreadReply({ promptId, replyId, emoji }) {
+      if (promptId !== mockDb.prompt.promptId) {
+        throw new Error('Unknown prompt for thread activity.');
+      }
+      const reply = mockDb.threadActivity.replies.find((r) => r.id === replyId);
+      if (!reply) {
+        throw new Error('Reply not found.');
+      }
+      const userId = mockDb.session?.user.id ?? mockMe.id;
+      const nextReaction: (typeof reply.reactions)[number] = {
+        id: `rr-${Date.now()}`,
+        userId,
+        emoji,
+      };
+      const replies = mockDb.threadActivity.replies.map((r) => {
+        if (r.id !== replyId) {
+          return r;
+        }
+        return { ...r, reactions: [...r.reactions, nextReaction] };
+      });
+      mockDb.threadActivity = { ...mockDb.threadActivity, replies };
+      return withLatency(cloneThreadActivity(mockDb.threadActivity));
     },
   },
   presence: {

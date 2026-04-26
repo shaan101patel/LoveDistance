@@ -8,6 +8,7 @@ import type {
   PrivacySettings,
   PresencePost,
   PromptThread,
+  PromptThreadActivity,
   Session,
 } from '@/types/domain';
 
@@ -33,8 +34,29 @@ export type CoupleService = {
 
 export type PromptService = {
   getTodayPrompt(): Promise<PromptThread>;
+  /** Thread screen read path; return null if no prompt with this id. */
+  getPromptById(promptId: string): Promise<PromptThread | null>;
   submitPromptAnswer(promptId: string, answer: string): Promise<PromptThread>;
   reactToPrompt(promptId: string, emoji: string): Promise<PromptThread>;
+};
+
+export type AddThreadReplyInput = {
+  promptId: string;
+  body: string;
+  parentReplyId?: string | null;
+};
+
+export type ReactToThreadReplyInput = {
+  promptId: string;
+  replyId: string;
+  emoji: string;
+};
+
+/** Follow-ups, per-reply reactions, and voice placeholders—separate from daily `PromptThread` payload. */
+export type ThreadInteractionService = {
+  getThreadActivity(promptId: string): Promise<PromptThreadActivity | null>;
+  addThreadReply(input: AddThreadReplyInput): Promise<PromptThreadActivity>;
+  reactToThreadReply(input: ReactToThreadReplyInput): Promise<PromptThreadActivity>;
 };
 
 export type PresenceService = {
@@ -75,6 +97,7 @@ export type ServiceRegistry = {
   auth: AuthService;
   couple: CoupleService;
   prompt: PromptService;
+  threadInteraction: ThreadInteractionService;
   presence: PresenceService;
   habits: HabitService;
   timeline: TimelineService;

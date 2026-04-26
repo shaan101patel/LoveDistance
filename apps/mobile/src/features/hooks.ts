@@ -12,12 +12,51 @@ export function useCouple() {
   });
 }
 
+/**
+ * Resolves the signed-in user id, preferring the couple record’s `meId` when paired.
+ */
+export function useCurrentUserId() {
+  const services = useServices();
+  const { data: couple } = useCouple();
+  const { data: session, isLoading } = useQuery({
+    queryKey: ['auth', 'session'],
+    queryFn: () => services.auth.getSession(),
+  });
+  const meId = couple?.meId ?? session?.user.id ?? null;
+  return { meId, isSessionLoading: isLoading };
+}
+
 export function useTodayPrompt() {
   const services = useServices();
   return useQuery({
     queryKey: ['prompt', 'today'],
     queryFn: () => services.prompt.getTodayPrompt(),
   });
+}
+
+/**
+ * Stack / deep-link read path. Returns `data: null` when the id is unknown (mock) or 404 (future).
+ */
+export function usePromptThread(promptId: string | undefined) {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['prompt', 'thread', promptId] as const,
+    queryFn: () => {
+      if (!promptId) {
+        throw new Error('promptId is required');
+      }
+      return services.prompt.getPromptById(promptId);
+    },
+    enabled: Boolean(promptId),
+  });
+}
+
+function syncPromptQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  next: { promptId: string },
+) {
+  queryClient.setQueryData(['prompt', 'today'], next);
+  queryClient.setQueryData(['prompt', 'thread', next.promptId], next);
 }
 
 export function useSubmitPrompt() {
@@ -27,7 +66,7 @@ export function useSubmitPrompt() {
     mutationFn: ({ promptId, answer }: { promptId: string; answer: string }) =>
       services.prompt.submitPromptAnswer(promptId, answer),
     onSuccess: (next) => {
-      queryClient.setQueryData(['prompt', 'today'], next);
+      syncPromptQueries(queryClient, next);
       queryClient.invalidateQueries({ queryKey: ['timeline'] });
     },
   });
@@ -40,7 +79,49 @@ export function usePromptReaction() {
     mutationFn: ({ promptId, emoji }: { promptId: string; emoji: string }) =>
       services.prompt.reactToPrompt(promptId, emoji),
     onSuccess: (next) => {
-      queryClient.setQueryData(['prompt', 'today'], next);
+      syncPromptQueries(queryClient, next);
+    },
+  });
+}
+
+/**
+ * Follow-up messages and reply reactions for an unlocked thread (separate from `PromptThread`).
+ */
+export function useThreadActivity(
+  promptId: string | undefined,
+  options?: { enabled?: boolean },
+) {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['threadActivity', promptId] as const,
+    queryFn: () => {
+      if (!promptId) {
+        throw new Error('promptId is required');
+      }
+      return services.threadInteraction.getThreadActivity(promptId);
+    },
+    enabled: Boolean(promptId) && options?.enabled !== false,
+  });
+}
+
+export function useAddThreadReply() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: services.threadInteraction.addThreadReply,
+    onSuccess: (next) => {
+      queryClient.setQueryData(['threadActivity', next.promptId], next);
+    },
+  });
+}
+
+export function useReactToThreadReply() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: services.threadInteraction.reactToThreadReply,
+    onSuccess: (next) => {
+      queryClient.setQueryData(['threadActivity', next.promptId], next);
     },
   });
 }

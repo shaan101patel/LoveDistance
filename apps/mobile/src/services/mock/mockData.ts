@@ -7,6 +7,7 @@ import type {
   PresencePost,
   PrivacySettings,
   PromptThread,
+  PromptThreadActivity,
   Session,
   UserProfile,
 } from '@/types/domain';
@@ -26,10 +27,46 @@ export const initialPromptThread: PromptThread = {
   promptId: 'prompt-today',
   date: new Date().toISOString().slice(0, 10),
   question: 'What small moment made you feel close to me this week?',
+  category: { id: 'cat-connection', label: 'Connection' },
   answers: [],
   isRevealed: false,
   reactions: [],
 };
+
+export const initialThreadActivity: PromptThreadActivity = {
+  promptId: 'prompt-today',
+  replies: [
+    {
+      id: 'reply-seed-1',
+      promptId: 'prompt-today',
+      parentReplyId: null,
+      authorId: mockPartner.id,
+      body: "Can't wait to hear your side too.",
+      createdAt: new Date().toISOString(),
+      reactions: [],
+    },
+  ],
+  voiceNotePlaceholders: [
+    {
+      id: 'vn-placeholder-1',
+      promptId: 'prompt-today',
+      kind: 'placeholder',
+      label: 'Leave a short voice follow-up',
+    },
+  ],
+};
+
+export function cloneThreadActivity(source: PromptThreadActivity): PromptThreadActivity {
+  return {
+    ...source,
+    replies: source.replies.map((r) => ({ ...r, reactions: r.reactions.map((x) => ({ ...x })) })),
+    voiceNotePlaceholders: source.voiceNotePlaceholders.map((v) => ({ ...v })),
+  };
+}
+
+export function resetThreadActivityToInitial() {
+  mockDb.threadActivity = cloneThreadActivity(initialThreadActivity);
+}
 
 export const initialPresencePosts: PresencePost[] = [
   {
@@ -111,6 +148,8 @@ type MockDatabase = {
   couple: CoupleProfile | null;
   invite: MockInviteLedger;
   prompt: PromptThread;
+  /** Follow-up replies and voice placeholders; not merged into `prompt`. */
+  threadActivity: PromptThreadActivity;
   posts: PresencePost[];
   habits: Habit[];
   memories: MemoryItem[];
@@ -124,6 +163,7 @@ export const mockDb: MockDatabase = {
   couple: null,
   invite: { issuedToken: null, redeemedTokens: [] },
   prompt: initialPromptThread,
+  threadActivity: cloneThreadActivity(initialThreadActivity),
   posts: initialPresencePosts,
   habits: initialHabits,
   memories: initialMemories,

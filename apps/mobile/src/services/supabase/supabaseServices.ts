@@ -30,8 +30,14 @@ export const supabaseServices: ServiceRegistry = {
   },
   prompt: {
     getTodayPrompt: () => notReady('prompt.getTodayPrompt'),
+    getPromptById: () => notReady('prompt.getPromptById'),
     submitPromptAnswer: () => notReady('prompt.submitPromptAnswer'),
     reactToPrompt: () => notReady('prompt.reactToPrompt'),
+  },
+  threadInteraction: {
+    getThreadActivity: () => notReady('threadInteraction.getThreadActivity'),
+    addThreadReply: () => notReady('threadInteraction.addThreadReply'),
+    reactToThreadReply: () => notReady('threadInteraction.reactToThreadReply'),
   },
   presence: {
     getLatestPosts: () => notReady('presence.getLatestPosts'),
