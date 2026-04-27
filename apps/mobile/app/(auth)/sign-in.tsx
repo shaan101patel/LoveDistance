@@ -75,8 +75,20 @@ export default function SignInScreen() {
           secureTextEntry
           value={password}
         />
-        <View style={{ marginTop: spacing.sm }}>
+        <View style={{ marginTop: spacing.sm, gap: spacing.sm }}>
           <Button label="Sign in" onPress={onSignIn} />
+          <Button
+            label="Create account"
+            onPress={() => {
+              const trimmed = email.trim();
+              if (trimmed) {
+                router.push({ pathname: '/(auth)/sign-up', params: { email: trimmed } });
+              } else {
+                router.push('/(auth)/sign-up');
+              }
+            }}
+            variant="secondary"
+          />
         </View>
       </SectionCard>
     </SectionScaffold>

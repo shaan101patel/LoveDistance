@@ -74,7 +74,10 @@ begin
     );
 
   new_couple_id := gen_random_uuid();
-  new_token := 'inv-' || encode(gen_random_bytes(12), 'hex');
+  new_token := 'inv-' || left(
+    replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''),
+    24
+  );
 
   insert into public.couples (id, is_complete)
   values (new_couple_id, false);

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 
@@ -16,13 +16,15 @@ import { spacing } from '@/theme/tokens';
 export default function SignUpScreen() {
   const theme = useTheme();
   const services = useServices();
+  const params = useLocalSearchParams<{ email?: string | string[] }>();
+  const emailPrefill = Array.isArray(params.email) ? params.email[0] : params.email;
   const setSignedIn = useSessionStore((s) => s.setSignedIn);
   const returnPath = useSessionStore((s) => s.returnPath);
   const setReturnPath = useSessionStore((s) => s.setReturnPath);
   const explainerDone = useOnboardingStore((s) => s.explainerDone);
   const profileSetupDone = useOnboardingStore((s) => s.profileSetupDone);
   const [firstName, setFirstName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(emailPrefill ?? '');
   const [password, setPassword] = useState('');
   const [formError, setFormError] = useState('');
 
