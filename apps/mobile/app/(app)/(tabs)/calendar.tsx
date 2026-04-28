@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 
@@ -8,6 +9,7 @@ import {
   HabitStreakRow,
   HabitWeekStrip,
 } from '@/components/calendar';
+import { TabHeaderTitle } from '@/components/navigation/TabHeaderTitle';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { isUserAllowedToToggleHabit, type HabitContextIds } from '@/features/habits';
@@ -19,6 +21,8 @@ import { radius, spacing, typeBase } from '@/theme/tokens';
 function startOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
+
+const CALENDAR_TAB_SUBTITLE = 'Small shared rituals for steady closeness';
 
 export default function CalendarTabScreen() {
   const theme = useTheme();
@@ -55,8 +59,18 @@ export default function CalendarTabScreen() {
     }
   }, [habits]);
 
-  const ctx: HabitContextIds | null =
-    meId && partnerId ? { meId, partnerId } : null;
+  const ctx = useMemo<HabitContextIds | null>(
+    () => (meId && partnerId ? { meId, partnerId } : null),
+    [meId, partnerId],
+  );
+
+  const navigation = useNavigation();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => <TabHeaderTitle title="Calendar" subtitle={CALENDAR_TAB_SUBTITLE} />,
+    });
+  }, [navigation]);
 
   const dayMeta = useCallback((ymd: string) => {
     const [y, m, d] = ymd.split('-').map(Number) as [number, number, number];
@@ -97,12 +111,7 @@ export default function CalendarTabScreen() {
 
   if (sessionLoading) {
     return (
-      <SectionScaffold
-        kicker="Rhythm"
-        title="Habits"
-        lead="Small rituals you keep across the distance, day by day."
-        scrollable={false}
-      >
+      <SectionScaffold hideHero scrollable={false}>
         <ActivityIndicator color={theme.colors.primary} size="large" />
       </SectionScaffold>
     );
@@ -110,12 +119,7 @@ export default function CalendarTabScreen() {
 
   if (!ctx) {
     return (
-      <SectionScaffold
-        kicker="Rhythm"
-        title="Habits"
-        lead="Connect with your partner to track shared habits on the calendar together."
-        scrollable={false}
-      >
+      <SectionScaffold hideHero scrollable={false}>
         <Body>We need your couple profile to show your habit calendar and streaks.</Body>
       </SectionScaffold>
     );
@@ -139,12 +143,7 @@ export default function CalendarTabScreen() {
       : null;
 
   return (
-    <SectionScaffold
-      kicker="Rhythm"
-      title="Habits"
-      lead="Small shared rituals, even in different time zones, build steady closeness. Tap a day to check in; partial days wait for your partner when both of you are meant to do it."
-      scrollable={false}
-    >
+    <SectionScaffold hideHero scrollable={false}>
       <ScrollView
         style={{ flex: 1, width: '100%' }}
         contentContainerStyle={{ paddingBottom: spacing.xxl, gap: spacing.md }}

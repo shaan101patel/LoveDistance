@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -8,12 +9,12 @@ import {
 } from 'react-native';
 
 import { MemoryTimelineFilterChips, TimelineMemoryRow } from '@/components/timeline';
+import { TabHeaderTitle } from '@/components/navigation/TabHeaderTitle';
 import { Input } from '@/components/primitives/Input';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useTimeline } from '@/features/hooks';
-import { isSupabaseApiMode, timelineTabCopy } from '@/services/apiMode';
 import type { MemoryItem, TimelineMemoryFilter } from '@/types/domain';
 import { spacing } from '@/theme/tokens';
 
@@ -32,9 +33,18 @@ function emptyBody(filter: TimelineMemoryFilter, hasSource: boolean): string {
   return 'No memories match your search.';
 }
 
+const TIMELINE_TAB_SUBTITLE = 'A repository of Prompts, photos, and shared moments';
+
 export default function TimelineScreen() {
+  const navigation = useNavigation();
   const theme = useTheme();
-  const live = isSupabaseApiMode();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => <TabHeaderTitle title="Timeline" subtitle={TIMELINE_TAB_SUBTITLE} />,
+    });
+  }, [navigation]);
+
   const [filter, setFilter] = useState<TimelineMemoryFilter>('all');
   const [search, setSearch] = useState('');
   const { data: memories, isLoading, isError, isRefetching, refetch } = useTimeline(filter);
@@ -77,11 +87,7 @@ export default function TimelineScreen() {
 
   if (isLoading) {
     return (
-      <SectionScaffold
-        kicker="Together"
-        lead={timelineTabCopy.tabLead(live)}
-        title="Timeline"
-      >
+      <SectionScaffold hideHero>
         <ActivityIndicator color={theme.colors.primary} size="large" />
         <Body>Loading your story…</Body>
       </SectionScaffold>
@@ -90,11 +96,7 @@ export default function TimelineScreen() {
 
   if (isError) {
     return (
-      <SectionScaffold
-        kicker="Together"
-        lead={timelineTabCopy.tabLead(live)}
-        title="Timeline"
-      >
+      <SectionScaffold hideHero>
         <Body>Couldn’t load the timeline.</Body>
         <View style={{ marginTop: spacing.md, alignSelf: 'flex-start' as const }}>
           <Button
@@ -112,12 +114,7 @@ export default function TimelineScreen() {
   const emptyText = emptyBody(filter, hasSource);
 
   return (
-    <SectionScaffold
-      kicker="Together"
-      lead={timelineTabCopy.tabLead(live)}
-      scrollable={false}
-      title="Timeline"
-    >
+    <SectionScaffold hideHero scrollable={false}>
       <FlatList
         data={displayMemories}
         keyExtractor={(m) => m.id}

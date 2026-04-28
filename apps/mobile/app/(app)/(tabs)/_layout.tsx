@@ -25,6 +25,12 @@ export default function AppTabsLayout() {
         headerStyle: { backgroundColor: theme.colors.surface },
         headerTintColor: theme.colors.textPrimary,
         headerTitleStyle: { fontWeight: '600' },
+        headerTitleAlign: 'left',
+        headerTitleContainerStyle: {
+          flexGrow: 1,
+          alignSelf: 'stretch',
+          justifyContent: 'center',
+        },
         headerShadowVisible: true,
         tabBarActiveTintColor: theme.colors.tabActive,
         tabBarInactiveTintColor: theme.colors.tabInactive,
@@ -47,12 +53,12 @@ export default function AppTabsLayout() {
         options={{ title: 'Photos', tabBarIcon: makeTabBarIcon('image') }}
       />
       <Tabs.Screen
-        name="calendar"
-        options={{ title: 'Calendar', tabBarIcon: makeTabBarIcon('calendar') }}
-      />
-      <Tabs.Screen
         name="timeline"
         options={{ title: 'Timeline', tabBarIcon: makeTabBarIcon('list-alt') }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{ title: 'Calendar', tabBarIcon: makeTabBarIcon('calendar') }}
       />
       <Tabs.Screen
         name="settings"

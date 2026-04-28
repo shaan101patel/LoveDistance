@@ -47,7 +47,7 @@ export async function loadCompleteCoupleProfile(): Promise<CoupleProfile | null>
 
   const { data: couple } = await sb
     .from('couples')
-    .select('id, reunion_date, is_complete')
+    .select('id, reunion_date, reunion_end_date, is_complete')
     .in('id', ids)
     .eq('is_complete', true)
     .maybeSingle();
@@ -75,7 +75,33 @@ export async function loadCompleteCoupleProfile(): Promise<CoupleProfile | null>
     meId: user.id,
     partner,
     reunionDate: couple.reunion_date ?? undefined,
+    reunionEndDate: couple.reunion_end_date ?? undefined,
   };
+}
+
+export async function updateReunionDates(input: {
+  reunionDate: string | null;
+  reunionEndDate: string | null;
+}): Promise<CoupleProfile> {
+  const sb = requireClient();
+  const coupleId = await requireCompleteCoupleId();
+  const reunionDate = input.reunionDate;
+  const reunionEndDate = reunionDate ? input.reunionEndDate : null;
+  const { error } = await sb
+    .from('couples')
+    .update({
+      reunion_date: reunionDate,
+      reunion_end_date: reunionEndDate,
+    })
+    .eq('id', coupleId);
+  if (error) {
+    throw new Error(error.message);
+  }
+  const next = await loadCompleteCoupleProfile();
+  if (!next) {
+    throw new Error('Could not reload couple after update.');
+  }
+  return next;
 }
 
 async function requireCompleteCoupleId(): Promise<string> {

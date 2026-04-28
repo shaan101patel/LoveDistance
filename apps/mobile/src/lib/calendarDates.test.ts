@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatYmdLocal, fromMonthKey, getMonthGridCells, getMondayOfWeek, getWeekYmdsForDay, toMonthKey } from '@/lib/calendarDates';
+import {
+  formatYmdLocal,
+  fromMonthKey,
+  getMonthGridCells,
+  getMondayOfWeek,
+  getWeekYmdsForDay,
+  parseYmdLocal,
+  toMonthKey,
+} from '@/lib/calendarDates';
 
 describe('getMonthGridCells', () => {
   it('January 2026: Thu 1st → 3 lead pads, first cell is previous month', () => {
@@ -38,5 +46,17 @@ describe('toMonthKey', () => {
     const d = new Date(2026, 2, 5);
     expect(toMonthKey(d)).toBe('2026-03');
     expect(toMonthKey(fromMonthKey('2026-03'))).toBe('2026-03');
+  });
+});
+
+describe('parseYmdLocal', () => {
+  it('parses valid YYYY-MM-DD', () => {
+    const d = parseYmdLocal('2026-06-15');
+    expect(d).not.toBeNull();
+    expect(formatYmdLocal(d!)).toBe('2026-06-15');
+  });
+  it('returns null for invalid calendar day or shape', () => {
+    expect(parseYmdLocal('2026-02-30')).toBeNull();
+    expect(parseYmdLocal('06-15-2026')).toBeNull();
   });
 });

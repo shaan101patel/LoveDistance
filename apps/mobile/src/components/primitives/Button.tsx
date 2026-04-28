@@ -8,7 +8,7 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 type Props = {
   label: string;
-  onPress: () => void;
+  onPress: () => void | Promise<void>;
   variant?: ButtonVariant;
   disabled?: boolean;
   style?: ViewStyle;

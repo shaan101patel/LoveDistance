@@ -4,7 +4,7 @@ import { Text, View } from 'react-native';
 
 import { Button, Input } from '@/components/primitives';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
-import { SectionCard } from '@/components/ui';
+import { Body, SectionCard } from '@/components/ui';
 import { getPostProfileSetupHref, isPendingInvitePath } from '@/features/session/postAuthRoute';
 import { useOnboardingStore } from '@/features/session/onboardingStore';
 import { useSessionStore } from '@/features/session/sessionStore';
@@ -62,11 +62,10 @@ export default function ProfileSetupScreen() {
   }
 
   return (
-    <SectionScaffold
-      kicker="You"
-      lead="This is how you’ll show up in your shared space. You can change it later."
-      title="Set up your profile"
-    >
+    <SectionScaffold hideHero>
+      <View style={{ marginBottom: spacing.md }}>
+        <Body>This is how you’ll show up in your shared space. You can change it later.</Body>
+      </View>
       {formError ? (
         <Text style={{ color: theme.colors.danger, marginBottom: spacing.sm }}>{formError}</Text>
       ) : null}

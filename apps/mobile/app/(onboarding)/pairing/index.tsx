@@ -17,11 +17,13 @@ export default function PairingHubScreen() {
   if (isPaired) {
     return (
       <SectionScaffold
+        centerContent
         footer={<Body>{pairingScreenCopy.pairingHubPairedFooter(live)}</Body>}
-        kicker="Together"
-        lead={pairingScreenCopy.pairingHubPairedLead(live)}
-        title="You’re paired"
+        hideHero
       >
+        <View style={{ marginBottom: spacing.md }}>
+          <Body>{pairingScreenCopy.pairingHubPairedLead(live)}</Body>
+        </View>
         <SectionCard>
           <Body>{pairingScreenCopy.pairingHubPairedCardBody(live)}</Body>
           <View style={{ gap: spacing.md, marginTop: spacing.md }}>
@@ -39,15 +41,20 @@ export default function PairingHubScreen() {
 
   return (
     <SectionScaffold
+      centerContent
       footer={
         <Text style={{ ...theme.type.bodySm, color: theme.colors.textSecondary }}>
           {pairingScreenCopy.pairingHubUnpairedFooter(live)}
         </Text>
       }
-      kicker="Together"
-      lead='One of you creates an invite; the other joins with the link or code. On one phone: generate a link, copy the code, then use "I have an invite code".'
-      title="Link with your partner"
+      hideHero
     >
+      <View style={{ marginBottom: spacing.md }}>
+        <Body>
+          One of you creates an invite; the other joins with the link or code. On one phone: generate
+          a link, copy the code, then use &quot;I have an invite code&quot;.
+        </Body>
+      </View>
       <SectionCard>
         <View style={{ gap: spacing.md }}>
           <Button

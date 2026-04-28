@@ -56,8 +56,9 @@ export default function ExplainerScreen() {
 
   return (
     <Screen>
-      <Heading>How it works</Heading>
-      <Body>Swipe or tap through—three quick ideas</Body>
+      <View style={{ marginBottom: spacing.sm }}>
+        <Body>Swipe or tap through—three quick ideas</Body>
+      </View>
       <FlatList
         ref={listRef}
         data={[...SLIDES]}

@@ -155,6 +155,7 @@ export const supabaseServices: ServiceRegistry = {
     getCouple: () => backend.loadCompleteCoupleProfile(),
     createInviteLink: () => backend.createInviteLinkRpc(),
     acceptInvite: (token) => backend.acceptInviteWithEdge(token),
+    updateReunionDates: (input) => backend.updateReunionDates(input),
   },
   prompt: {
     getTodayPrompt: () => backend.getTodayPrompt(),

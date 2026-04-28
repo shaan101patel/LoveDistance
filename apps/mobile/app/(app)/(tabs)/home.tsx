@@ -1,8 +1,10 @@
+import { useNavigation } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, type Href } from 'expo-router';
-import { useMemo } from 'react';
+import { useLayoutEffect, useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { TabHeaderTitle } from '@/components/navigation/TabHeaderTitle';
 import { Card } from '@/components/primitives';
 import {
   DailyPromptCard,
@@ -41,9 +43,18 @@ const quickLinks: { href: Href; label: string; hint: string }[] = [
   { href: '/(app)/notifications' as Href, label: 'Alerts', hint: 'Notification center (mock)' },
 ];
 
+const HOME_TAB_SUBTITLE = "Today's question, shared presence, and small ritual";
+
 export default function HomeScreen() {
+  const navigation = useNavigation();
   const theme = useTheme();
   const queryClient = useQueryClient();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => <TabHeaderTitle title="Home" subtitle={HOME_TAB_SUBTITLE} />,
+    });
+  }, [navigation]);
   const { data: couple, isLoading: coupleLoading } = useCouple();
   const { data: thread, isLoading: promptLoading, isError: promptError } = useTodayPrompt();
   const { data: presencePosts } = usePresenceFeed();
@@ -73,11 +84,7 @@ export default function HomeScreen() {
     Boolean(partner) && (coupleLoading || sessionUserLoading || promptLoading || habitsLoading);
 
   return (
-    <SectionScaffold
-      kicker="Your space"
-      lead="A calm home for today’s question, shared presence, and the small rituals that keep you close."
-      title="Home"
-    >
+    <SectionScaffold hideHero>
       {coupleLoading ? (
         <SectionCard>
           <Body>Loading your couple space…</Body>
@@ -103,7 +110,11 @@ export default function HomeScreen() {
             </SectionCard>
           ) : homeFeed && thread && meId ? (
             <View style={{ gap: spacing.lg }}>
-              <ReunionCountdownCard reunionIso={couple.reunionDate} partnerFirstName={partner.firstName} />
+              <ReunionCountdownCard
+                reunionIso={couple.reunionDate}
+                reunionEndIso={couple.reunionEndDate}
+                partnerFirstName={partner.firstName}
+              />
               <RitualShortcutsStrip partnerFirstName={partner.firstName} />
               <DailyPromptCard daily={homeFeed.daily} />
               {presencePosts?.[0] ? (

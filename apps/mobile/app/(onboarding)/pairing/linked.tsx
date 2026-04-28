@@ -1,6 +1,6 @@
 import type { Href } from 'expo-router';
 import { router } from 'expo-router';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Button } from '@/components/primitives';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
@@ -25,11 +25,30 @@ export default function PairedSuccessScreen() {
     : null;
 
   return (
-    <SectionScaffold
-      kicker="You’re set"
-      lead="Mock data only—Supabase will persist this couple record and keep devices in sync."
-      title={isLoading ? 'Linked' : `Connected with ${partnerName}`}
-    >
+    <SectionScaffold centerContent hideHero>
+      {isLoading ? (
+        <View style={{ marginBottom: spacing.md }}>
+          <Body>Getting your couple ready…</Body>
+        </View>
+      ) : (
+        <>
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: '700',
+              color: theme.colors.textPrimary,
+              marginBottom: spacing.sm,
+            }}
+          >
+            Connected with {partnerName}
+          </Text>
+          <View style={{ marginBottom: spacing.md }}>
+            <Body>
+              Mock data only—Supabase will persist this couple record and keep devices in sync.
+            </Body>
+          </View>
+        </>
+      )}
       <SectionCard>
         {isLoading ? (
           <Body>Loading your couple…</Body>

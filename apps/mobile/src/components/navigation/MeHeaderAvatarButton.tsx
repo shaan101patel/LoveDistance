@@ -14,11 +14,19 @@ export function MeHeaderAvatarButton() {
   const u = session?.user;
   const source = u?.avatarUrl ? { uri: u.avatarUrl } : undefined;
 
+  function goProfile() {
+    if (session) {
+      router.push('/(app)/(tabs)/settings/profile');
+    } else {
+      router.push('/(auth)/guest-profile');
+    }
+  }
+
   return (
     <Pressable
       accessibilityLabel="Account and profile"
       hitSlop={8}
-      onPress={() => router.push('/(app)/(tabs)/settings/profile')}
+      onPress={goProfile}
       style={{ marginRight: 4 }}
     >
       <Avatar name={u?.firstName} size="sm" source={source} />

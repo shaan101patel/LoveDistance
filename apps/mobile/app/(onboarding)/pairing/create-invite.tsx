@@ -52,11 +52,10 @@ export default function CreateInviteScreen() {
   }
 
   return (
-    <SectionScaffold
-      kicker="Invite"
-      lead={pairingScreenCopy.createInviteLead(live)}
-      title="Create an invite"
-    >
+    <SectionScaffold centerContent hideHero>
+      <View style={{ marginBottom: spacing.md }}>
+        <Body>{pairingScreenCopy.createInviteLead(live)}</Body>
+      </View>
       {phase === 'error' && message ? (
         <Text style={{ color: theme.colors.danger, marginBottom: spacing.sm }}>{message}</Text>
       ) : null}

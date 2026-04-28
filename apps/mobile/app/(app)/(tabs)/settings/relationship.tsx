@@ -55,9 +55,7 @@ export default function SettingsRelationshipScreen() {
         </View>
         {couple.reunionDate ? (
           <View style={{ gap: spacing.xs, marginBottom: spacing.md }}>
-            <Text style={{ color: theme.colors.textSecondary, fontSize: 13 }}>
-              Reunion (sample)
-            </Text>
+            <Text style={{ color: theme.colors.textSecondary, fontSize: 13 }}>Reunion visit</Text>
             <Text style={{ color: theme.colors.textPrimary }}>
               {new Date(couple.reunionDate).toLocaleDateString(undefined, {
                 weekday: 'long',
@@ -65,6 +63,14 @@ export default function SettingsRelationshipScreen() {
                 day: 'numeric',
                 year: 'numeric',
               })}
+              {couple.reunionEndDate
+                ? ` → ${new Date(couple.reunionEndDate).toLocaleDateString(undefined, {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}`
+                : ''}
             </Text>
           </View>
         ) : null}

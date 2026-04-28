@@ -70,18 +70,21 @@ export type Database = {
           id: string;
           is_complete: boolean;
           reunion_date: string | null;
+          reunion_end_date: string | null;
         };
         Insert: {
           created_at?: string;
           id?: string;
           is_complete?: boolean;
           reunion_date?: string | null;
+          reunion_end_date?: string | null;
         };
         Update: {
           created_at?: string;
           id?: string;
           is_complete?: boolean;
           reunion_date?: string | null;
+          reunion_end_date?: string | null;
         };
         Relationships: [];
       };

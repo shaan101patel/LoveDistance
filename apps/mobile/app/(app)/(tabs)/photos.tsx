@@ -1,4 +1,5 @@
-import { useCallback } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { useCallback, useLayoutEffect } from 'react';
 import { useRouter, type Href } from 'expo-router';
 import {
   ActivityIndicator,
@@ -9,12 +10,12 @@ import {
   View,
 } from 'react-native';
 
+import { TabHeaderTitle } from '@/components/navigation/TabHeaderTitle';
 import { Button } from '@/components/primitives/Button';
 import { PhotoPostCard } from '@/components/presence';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body } from '@/components/ui';
 import { useCouple, useCurrentUserId, usePresenceFeed, useReactToPost } from '@/features/hooks';
-import { isSupabaseApiMode, photosTabCopy } from '@/services/apiMode';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { PresencePost } from '@/types/domain';
 import { spacing } from '@/theme/tokens';
@@ -23,10 +24,18 @@ const composeHref = '/(app)/photo/compose' as Href;
 const recapSelectHref = '/(app)/weekly-recap/select' as Href;
 const GAP = spacing.lg;
 
+const PHOTOS_TAB_SUBTITLE = 'Share a still from your day.';
+
 export default function PhotosTabScreen() {
+  const navigation = useNavigation();
   const theme = useTheme();
-  const live = isSupabaseApiMode();
   const router = useRouter();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => <TabHeaderTitle title="Photos" subtitle={PHOTOS_TAB_SUBTITLE} />,
+    });
+  }, [navigation]);
   const { data: couple } = useCouple();
   const { meId } = useCurrentUserId();
   const { data: posts, isLoading, isError, isRefetching, refetch } = usePresenceFeed();
@@ -82,11 +91,7 @@ export default function PhotosTabScreen() {
 
   if (isLoading) {
     return (
-      <SectionScaffold
-        kicker="Presence"
-        lead={photosTabCopy.tabLead(live)}
-        title="Photos"
-      >
+      <SectionScaffold hideHero>
         <View style={styles.center}>
           <ActivityIndicator color={theme.colors.primary} size="large" />
           <Body>Loading your feed…</Body>
@@ -97,11 +102,7 @@ export default function PhotosTabScreen() {
 
   if (isError) {
     return (
-      <SectionScaffold
-        kicker="Presence"
-        lead={photosTabCopy.tabLead(live)}
-        title="Photos"
-      >
+      <SectionScaffold hideHero>
         <View style={styles.errorBlock}>
           <Body>Could not load photos.</Body>
           <View style={styles.startRow}>
@@ -119,23 +120,14 @@ export default function PhotosTabScreen() {
 
   if (!meId) {
     return (
-      <SectionScaffold
-        kicker="Presence"
-        lead={photosTabCopy.tabLead(live)}
-        title="Photos"
-      >
+      <SectionScaffold hideHero>
         <Body>We need your profile to show who shared each post.</Body>
       </SectionScaffold>
     );
   }
 
   return (
-    <SectionScaffold
-      kicker="Presence"
-      lead={photosTabCopy.tabLead(live)}
-      scrollable={false}
-      title="Photos"
-    >
+    <SectionScaffold hideHero scrollable={false}>
       <FlatList
         data={posts ?? []}
         keyExtractor={(p) => p.id}

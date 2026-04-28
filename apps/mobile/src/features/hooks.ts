@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useServices } from '@/services/ServiceContext';
+import type { UpdateReunionDatesInput } from '@/services/ports';
 import { hasPremiumAccess } from '@/features/premium/entitlements';
 import type {
   CoupleProfile,
@@ -17,6 +18,17 @@ export function useCouple() {
   return useQuery({
     queryKey: ['couple'],
     queryFn: (): Promise<CoupleProfile | null> => services.couple.getCouple(),
+  });
+}
+
+export function useUpdateReunionDates() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateReunionDatesInput) => services.couple.updateReunionDates(input),
+    onSuccess: (next) => {
+      queryClient.setQueryData(['couple'], next);
+    },
   });
 }
 

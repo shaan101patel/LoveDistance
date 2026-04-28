@@ -4,7 +4,7 @@ import { Text, View } from 'react-native';
 
 import { Button, Input } from '@/components/primitives';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
-import { SectionCard } from '@/components/ui';
+import { Body, SectionCard } from '@/components/ui';
 import { isSupabaseApiMode, pairingScreenCopy } from '@/services/apiMode';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
@@ -58,6 +58,7 @@ export default function EnterInviteCodeScreen() {
 
   return (
     <SectionScaffold
+      centerContent
       footer={
         <View style={{ gap: spacing.xs }}>
           <Text style={{ ...theme.type.caption, color: theme.colors.textSecondary }}>
@@ -70,10 +71,11 @@ export default function EnterInviteCodeScreen() {
           ) : null}
         </View>
       }
-      kicker="Join"
-      lead={pairingScreenCopy.enterCodeLead(live)}
-      title="Enter invite"
+      hideHero
     >
+      <View style={{ marginBottom: spacing.md }}>
+        <Body>{pairingScreenCopy.enterCodeLead(live)}</Body>
+      </View>
       {error ? (
         <Text style={{ color: theme.colors.danger, marginBottom: spacing.sm }}>{error}</Text>
       ) : null}

@@ -73,11 +73,13 @@ export default function InviteAcceptanceScreen() {
 
   if (!token) {
     return (
-      <SectionScaffold
-        kicker="Invite"
-        lead="No token was found in the URL. Open a full invite link or enter a code on the previous screen."
-        title="Missing invite"
-      >
+      <SectionScaffold hideHero>
+        <View style={{ marginBottom: spacing.md }}>
+          <Body>
+            No token was found in the URL. Open a full invite link or enter a code on the previous
+            screen.
+          </Body>
+        </View>
         <SectionCard>
           <Button
             label="Enter a code"
@@ -95,11 +97,10 @@ export default function InviteAcceptanceScreen() {
 
   if (isPaired) {
     return (
-      <SectionScaffold
-        kicker="Invite"
-        lead={pairingScreenCopy.inviteAlreadyPairedLead(live)}
-        title="You’re already paired"
-      >
+      <SectionScaffold hideHero>
+        <View style={{ marginBottom: spacing.md }}>
+          <Body>{pairingScreenCopy.inviteAlreadyPairedLead(live)}</Body>
+        </View>
         <SectionCard>
           <Button label="Open home" onPress={() => router.replace('/(app)/(tabs)/home')} />
         </SectionCard>
@@ -109,11 +110,13 @@ export default function InviteAcceptanceScreen() {
 
   if (isPlaceholderRoute) {
     return (
-      <SectionScaffold
-        kicker="Deep link"
-        lead="The route file app/(onboarding)/invite/[token].tsx is the stable target for production invites. Replace the placeholder token in your URL with a real one from an invite."
-        title="Invite placeholder"
-      >
+      <SectionScaffold hideHero>
+        <View style={{ marginBottom: spacing.md }}>
+          <Body>
+            The route file app/(onboarding)/invite/[token].tsx is the stable target for production
+            invites. Replace the placeholder token in your URL with a real one from an invite.
+          </Body>
+        </View>
         <SectionCard>
           <Text style={{ color: theme.colors.textSecondary, marginBottom: spacing.sm }}>
             Token: {token}
@@ -129,11 +132,10 @@ export default function InviteAcceptanceScreen() {
   }
 
   return (
-    <SectionScaffold
-      kicker="Invite"
-      lead={pairingScreenCopy.inviteJoinLead(live)}
-      title="Join your partner"
-    >
+    <SectionScaffold hideHero>
+      <View style={{ marginBottom: spacing.md }}>
+        <Body>{pairingScreenCopy.inviteJoinLead(live)}</Body>
+      </View>
       {error ? (
         <View style={{ marginBottom: spacing.md, gap: spacing.xs }}>
           <Text style={{ color: theme.colors.danger }}>{error}</Text>

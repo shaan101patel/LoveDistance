@@ -3,9 +3,14 @@ import { describe, expect, it } from 'vitest';
 import {
   MOCK_ME_TIME_ZONE,
   MOCK_PARTNER_TIME_ZONE,
+  effectiveReunionEndIso,
   formatReunionInBothZones,
+  localCalendarDateFromReunionIso,
   partnerRelativeDaypart,
   reunionCountdownParts,
+  reunionEndOfLocalDayIso,
+  reunionIsoFromLocalDate,
+  reunionVisitPhase,
 } from '@/features/rituals/ritualTimePresentation';
 
 describe('reunionCountdownParts', () => {
@@ -33,6 +38,43 @@ describe('partnerRelativeDaypart', () => {
     const noonUtc = new Date('2026-06-15T12:00:00.000Z');
     const label = partnerRelativeDaypart(noonUtc, MOCK_PARTNER_TIME_ZONE);
     expect(['morning there', 'afternoon there', 'evening there', 'late night there']).toContain(label);
+  });
+});
+
+describe('reunionIsoFromLocalDate / localCalendarDateFromReunionIso', () => {
+  it('round-trips local calendar day at midday', () => {
+    const d = new Date(2026, 5, 10, 9, 30, 0, 0);
+    const iso = reunionIsoFromLocalDate(d);
+    const back = localCalendarDateFromReunionIso(iso);
+    expect(back.getFullYear()).toBe(2026);
+    expect(back.getMonth()).toBe(5);
+    expect(back.getDate()).toBe(10);
+  });
+});
+
+describe('reunionEndOfLocalDayIso / effectiveReunionEndIso', () => {
+  it('effective end falls back to end of start day when no explicit end', () => {
+    const start = reunionIsoFromLocalDate(new Date(2026, 5, 10));
+    const end = effectiveReunionEndIso(start, undefined);
+    const endDay = localCalendarDateFromReunionIso(end);
+    expect(endDay.getFullYear()).toBe(2026);
+    expect(endDay.getMonth()).toBe(5);
+    expect(endDay.getDate()).toBe(10);
+  });
+});
+
+describe('reunionVisitPhase', () => {
+  const start = reunionIsoFromLocalDate(new Date(2026, 5, 10));
+  const end = reunionEndOfLocalDayIso(new Date(2026, 5, 12));
+
+  it('is upcoming before start', () => {
+    expect(reunionVisitPhase(start, end, new Date(new Date(start).getTime() - 2 * 3600000))).toBe('upcoming');
+  });
+  it('is together after start', () => {
+    expect(reunionVisitPhase(start, end, new Date(new Date(start).getTime() + 2 * 3600000))).toBe('together');
+  });
+  it('is ended after end instant', () => {
+    expect(reunionVisitPhase(start, end, new Date(new Date(end).getTime() + 2 * 3600000))).toBe('ended');
   });
 });
 

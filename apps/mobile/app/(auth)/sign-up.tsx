@@ -4,7 +4,7 @@ import { Text, View } from 'react-native';
 
 import { Button, Input } from '@/components/primitives';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
-import { SectionCard } from '@/components/ui';
+import { Body, SectionCard } from '@/components/ui';
 import { getPostSignInHref, isPendingInvitePath } from '@/features/session/postAuthRoute';
 import { useOnboardingStore } from '@/features/session/onboardingStore';
 import { useSessionStore } from '@/features/session/sessionStore';
@@ -52,11 +52,10 @@ export default function SignUpScreen() {
   }
 
   return (
-    <SectionScaffold
-      kicker="Account"
-      lead={authScreenCopy.signUpLead(isSupabaseApiMode())}
-      title="Create an account"
-    >
+    <SectionScaffold hideHero>
+      <View style={{ marginBottom: spacing.md }}>
+        <Body>{authScreenCopy.signUpLead(isSupabaseApiMode())}</Body>
+      </View>
       {formError ? (
         <Text style={{ color: theme.colors.danger, marginBottom: spacing.sm }}>{formError}</Text>
       ) : null}

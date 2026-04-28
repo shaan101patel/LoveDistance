@@ -6,8 +6,10 @@ import { Body, Heading, Screen } from '@/components/ui';
 import { spacing } from '@/theme/tokens';
 
 type Props = PropsWithChildren<{
-  kicker: string;
-  title: string;
+  /** When true, skip the kicker / title / lead block (e.g. tab chrome lives in the native header). */
+  hideHero?: boolean;
+  kicker?: string;
+  title?: string;
   /** Short supporting line; optional extra node under it */
   lead?: string;
   footer?: ReactNode;
@@ -16,6 +18,11 @@ type Props = PropsWithChildren<{
    * e.g. FlatList, to avoid nested scroll views).
    */
   scrollable?: boolean;
+  /**
+   * Vertically center the content column when it is shorter than the screen (welcome, sign-in, pairing).
+   * Horizontal centering of the max-width column always applies.
+   */
+  centerContent?: boolean;
 }>;
 
 const MAX_CONTENT_WIDTH = 600;
@@ -23,19 +30,29 @@ const MAX_CONTENT_WIDTH = 600;
 /**
  * Polished section shell: scrollable, responsive max width, consistent spacing.
  */
-export function SectionScaffold({ kicker, title, lead, footer, children, scrollable = true }: Props) {
+export function SectionScaffold({
+  hideHero,
+  kicker,
+  title,
+  lead,
+  footer,
+  children,
+  scrollable = true,
+  centerContent = false,
+}: Props) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const contentW =
     width >= MAX_CONTENT_WIDTH + spacing.lg * 2 ? MAX_CONTENT_WIDTH : width - spacing.lg * 2;
 
-  const header = (
-    <View style={{ gap: spacing.xs }}>
-      <Body>{kicker}</Body>
-      <Heading>{title}</Heading>
-      {lead ? <Body>{lead}</Body> : null}
-    </View>
-  );
+  const header =
+    hideHero ? null : (
+      <View style={{ gap: spacing.xs }}>
+        {kicker ? <Body>{kicker}</Body> : null}
+        {title ? <Heading>{title}</Heading> : null}
+        {lead ? <Body>{lead}</Body> : null}
+      </View>
+    );
 
   const inner = (
     <View
@@ -53,28 +70,33 @@ export function SectionScaffold({ kicker, title, lead, footer, children, scrolla
     </View>
   );
 
+  const scrollContentStyle = {
+    paddingBottom: insets.bottom + spacing.xxxl,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center' as const,
+    ...(centerContent ? { flexGrow: 1, justifyContent: 'center' as const } : {}),
+  };
+
+  const fixedOuterStyle = {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center' as const,
+    paddingBottom: insets.bottom,
+    ...(centerContent ? { justifyContent: 'center' as const } : {}),
+  };
+
   return (
     <Screen padded={false}>
       {scrollable ? (
         <ScrollView
-          contentContainerStyle={{
-            paddingBottom: insets.bottom + spacing.xxxl,
-            paddingHorizontal: spacing.lg,
-            alignItems: 'center',
-          }}
+          contentContainerStyle={scrollContentStyle}
           showsVerticalScrollIndicator={false}
+          style={{ flex: 1 }}
         >
           {inner}
         </ScrollView>
       ) : (
-        <View
-          style={{
-            flex: 1,
-            paddingHorizontal: spacing.lg,
-            alignItems: 'center',
-            paddingBottom: insets.bottom,
-          }}
-        >
+        <View style={fixedOuterStyle}>
           {inner}
         </View>
       )}

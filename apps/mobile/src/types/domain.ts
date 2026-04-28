@@ -17,6 +17,8 @@ export type CoupleProfile = {
   meId: string;
   partner: UserProfile;
   reunionDate?: string;
+  /** Last day of the visit (inclusive); when absent, the visit is treated as the reunion start day only. */
+  reunionEndDate?: string;
 };
 
 /** Quick text rituals (mock); not merged into presence or prompt threads. */

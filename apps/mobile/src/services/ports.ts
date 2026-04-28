@@ -35,11 +35,18 @@ export type AuthService = {
 };
 
 /** Replaced by a Supabase-backed implementation that writes `couples` and validates invite rows. */
+export type UpdateReunionDatesInput = {
+  reunionDate: string | null;
+  reunionEndDate: string | null;
+};
+
 export type CoupleService = {
   getCouple(): Promise<CoupleProfile | null>;
   /** Returns a shareable URL; mock uses `lovedistance://invite/<token>`. */
   createInviteLink(): Promise<string>;
   acceptInvite(token: string): Promise<CoupleProfile>;
+  /** Persist reunion window (`reunion_date` / `reunion_end_date` on `couples`). */
+  updateReunionDates(input: UpdateReunionDatesInput): Promise<CoupleProfile>;
 };
 
 export type SubmitPromptAnswerInput = { answer: string; imageUri: string | null };

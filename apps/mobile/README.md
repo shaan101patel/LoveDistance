@@ -1,6 +1,6 @@
 # LoveDistance Mobile (Expo)
 
-Expo + TypeScript + Expo Router app: auth, onboarding, pairing, tabs (Home, Prompt, Photos, Calendar, Timeline, Settings), and stack routes (prompt thread, photo compose, habits, notifications, weekly recap, etc.).
+Expo + TypeScript + Expo Router app: auth, onboarding, pairing, tabs (Home, Prompt, Photos, Timeline, Calendar, Settings), and stack routes (prompt thread, photo compose, habits, notifications, weekly recap, etc.).
 
 ## Monorepo docs (start here)
 

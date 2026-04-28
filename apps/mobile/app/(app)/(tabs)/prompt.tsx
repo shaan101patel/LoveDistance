@@ -1,6 +1,9 @@
+import { useNavigation } from '@react-navigation/native';
 import { Link, router, type Href } from 'expo-router';
+import { useLayoutEffect } from 'react';
 import { Text, View } from 'react-native';
 
+import { TabHeaderTitle } from '@/components/navigation/TabHeaderTitle';
 import { EmptyState } from '@/components/primitives';
 import { PremiumGate, PremiumUpsellBanner } from '@/components/premium';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
@@ -9,15 +12,22 @@ import { isSupabaseApiMode, promptTabCopy } from '@/services/apiMode';
 import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
+const PROMPT_TAB_SUBTITLE =
+  'One thoughtful question, answered when you are both ready.';
+
 export default function PromptTabScreen() {
+  const navigation = useNavigation();
   const theme = useTheme();
   const live = isSupabaseApiMode();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => <TabHeaderTitle title="Prompt" subtitle={PROMPT_TAB_SUBTITLE} />,
+    });
+  }, [navigation]);
+
   return (
-    <SectionScaffold
-      kicker="Today"
-      lead="One thoughtful question, answered when you are both ready. Thread and reactions will live here."
-      title="Prompt"
-    >
+    <SectionScaffold hideHero>
       <SectionCard>
         <EmptyState
           title={promptTabCopy.emptyTitle(live)}

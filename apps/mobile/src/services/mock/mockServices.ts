@@ -26,6 +26,11 @@ import {
   upsertPromptPhotoFusionMemory,
 } from '@/services/mock/mockData';
 import { getPathFromRef, parseDeepLink } from '@/lib/deepLinking/deepLinkService';
+import { addLocalDays } from '@/lib/calendarDates';
+import {
+  reunionEndOfLocalDayIso,
+  reunionIsoFromLocalDate,
+} from '@/features/rituals/ritualTimePresentation';
 import { isUserAllowedToToggleHabit } from '@/features/habits/habitPolicy';
 import {
   filterPresencePostsInWeek,
@@ -206,11 +211,29 @@ export const mockServices: ServiceRegistry = {
         mockDb.invite.issuedToken = null;
       }
 
+      const startAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 42);
+      const startCal = new Date(startAt.getFullYear(), startAt.getMonth(), startAt.getDate());
+      const endCal = addLocalDays(startCal, 6);
       mockDb.couple = {
         id: `couple-${normalized}`,
         meId: mockDb.session?.user.id ?? mockMe.id,
         partner: mockPartner,
-        reunionDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 42).toISOString(),
+        reunionDate: reunionIsoFromLocalDate(startCal),
+        reunionEndDate: reunionEndOfLocalDayIso(endCal),
+      };
+      return withLatency({ ...mockDb.couple });
+    },
+    async updateReunionDates(input) {
+      if (!mockDb.couple) {
+        throw new Error('Complete pairing first to use this feature.');
+      }
+      const reunionDate = input.reunionDate ?? undefined;
+      const reunionEndDate =
+        reunionDate != null ? (input.reunionEndDate ?? undefined) : undefined;
+      mockDb.couple = {
+        ...mockDb.couple,
+        reunionDate,
+        reunionEndDate,
       };
       return withLatency({ ...mockDb.couple });
     },

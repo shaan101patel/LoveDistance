@@ -44,6 +44,53 @@ export type ReunionCountdownParts = {
   isPast: boolean;
 };
 
+/** Local calendar date from a stored reunion instant (for pickers). */
+export function localCalendarDateFromReunionIso(reunionIso: string): Date {
+  const d = new Date(reunionIso);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/** Midday local on the chosen calendar day — stable all-day reunion anchor. */
+export function reunionIsoFromLocalDate(d: Date): string {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0, 0).toISOString();
+}
+
+/** End of local calendar day for the visit’s last day. */
+export function reunionEndOfLocalDayIso(d: Date): string {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).toISOString();
+}
+
+/** When no explicit end is stored, treat the visit as the reunion start calendar day only. */
+export function effectiveReunionEndIso(startIso: string, endIso: string | undefined): string {
+  if (endIso) {
+    return endIso;
+  }
+  return reunionEndOfLocalDayIso(localCalendarDateFromReunionIso(startIso));
+}
+
+export type ReunionVisitPhase = 'upcoming' | 'together' | 'ended';
+
+export function reunionVisitPhase(
+  startIso: string,
+  endIso: string | undefined,
+  now: Date,
+): ReunionVisitPhase {
+  const startMs = new Date(startIso).getTime();
+  const endMs = new Date(effectiveReunionEndIso(startIso, endIso)).getTime();
+  const t = now.getTime();
+  if (t < startMs) return 'upcoming';
+  if (t <= endMs) return 'together';
+  return 'ended';
+}
+
+/** Inclusive calendar days from “today” through the visit end (0 when past end day). */
+export function visitCalendarDaysRemaining(now: Date, endIso: string): number {
+  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const endDay = localCalendarDateFromReunionIso(endIso);
+  const diffDays = Math.round((endDay.getTime() - nowDay.getTime()) / (24 * 60 * 60 * 1000));
+  return Math.max(0, diffDays + 1);
+}
+
 export function reunionCountdownParts(reunionIso: string, now: Date): ReunionCountdownParts {
   const target = new Date(reunionIso);
   const totalMs = target.getTime() - now.getTime();

@@ -3,7 +3,7 @@ import { View } from 'react-native';
 
 import { Button } from '@/components/primitives';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
-import { SectionCard } from '@/components/ui';
+import { Body, SectionCard } from '@/components/ui';
 import { useOnboardingStore } from '@/features/session/onboardingStore';
 import { spacing } from '@/theme/tokens';
 
@@ -21,11 +21,12 @@ export default function WelcomeScreen() {
   }
 
   return (
-    <SectionScaffold
-      kicker="Welcome"
-      lead="Stay close, even at a distance—prompts, presence, and small rituals for long-distance love."
-      title="LoveDistance"
-    >
+    <SectionScaffold centerContent hideHero>
+      <View style={{ marginBottom: spacing.md, alignItems: 'center' }}>
+        <Body>
+          Stay close, even at a distance—prompts, presence, and small rituals for long-distance love.
+        </Body>
+      </View>
       <SectionCard>
         <View style={{ gap: spacing.md }}>
           <Button label="Get started" onPress={toSignUp} />
