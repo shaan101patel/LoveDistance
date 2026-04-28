@@ -1,7 +1,7 @@
 import type { User } from '@supabase/supabase-js';
 import type { Session, UserProfile } from '@/types/domain';
 import type { Tables } from '@/services/supabase/database.types';
-import { supabaseClient } from '@/services/supabase/client';
+import { isSupabaseConfigured, supabaseClient } from '@/services/supabase/client';
 
 export async function loadProfileRow(userId: string): Promise<Tables<'profiles'> | null> {
   const sb = requireClient();
@@ -16,6 +16,14 @@ export function requireClient() {
   return supabaseClient;
 }
 
+function publicAvatarUrl(path: string | null | undefined): string | undefined {
+  if (!path || !isSupabaseConfigured || !supabaseClient) {
+    return undefined;
+  }
+  const { data } = supabaseClient.storage.from('avatars').getPublicUrl(path);
+  return data.publicUrl;
+}
+
 export function mapUserProfile(user: User, row: Tables<'profiles'> | null): UserProfile {
   const fromMeta = user.user_metadata as Record<string, unknown> | undefined;
   const metaFirst =
@@ -25,6 +33,7 @@ export function mapUserProfile(user: User, row: Tables<'profiles'> | null): User
     firstName: row?.first_name?.trim() || metaFirst?.trim() || 'You',
     email: user.email ?? undefined,
     displayName: row?.display_name ?? (typeof fromMeta?.display_name === 'string' ? fromMeta.display_name : undefined),
+    avatarUrl: publicAvatarUrl(row?.avatar_storage_path ?? undefined),
   };
 }
 

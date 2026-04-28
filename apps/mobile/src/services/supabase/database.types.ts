@@ -304,6 +304,7 @@ export type Database = {
       };
       profiles: {
         Row: {
+          avatar_storage_path: string | null;
           created_at: string;
           display_name: string | null;
           first_name: string;
@@ -312,6 +313,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          avatar_storage_path?: string | null;
           created_at?: string;
           display_name?: string | null;
           first_name?: string;
@@ -320,6 +322,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          avatar_storage_path?: string | null;
           created_at?: string;
           display_name?: string | null;
           first_name?: string;

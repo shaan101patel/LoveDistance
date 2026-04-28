@@ -3,6 +3,8 @@ export type UserProfile = {
   firstName: string;
   email?: string;
   displayName?: string;
+  /** Resolved public URL (Supabase) or local file URI (mock) when set. */
+  avatarUrl?: string;
 };
 
 export type Session = {

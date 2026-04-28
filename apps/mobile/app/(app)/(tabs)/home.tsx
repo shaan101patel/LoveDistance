@@ -39,7 +39,6 @@ const quickLinks: { href: Href; label: string; hint: string }[] = [
     hint: 'Pick up to five photos for your week (mock)',
   },
   { href: '/(app)/notifications' as Href, label: 'Alerts', hint: 'Notification center (mock)' },
-  { href: '/(app)/(tabs)/settings', label: 'Settings', hint: 'You & the app' },
 ];
 
 export default function HomeScreen() {

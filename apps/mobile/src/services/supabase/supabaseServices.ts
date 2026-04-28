@@ -109,6 +109,40 @@ export const supabaseServices: ServiceRegistry = {
       }
       return refreshSession();
     },
+    async uploadProfilePhoto(localUri: string, contentType?: string) {
+      const sb = requireClient();
+      const { data: userData } = await sb.auth.getUser();
+      const user = userData.user;
+      if (!user) {
+        throw new Error('Not signed in');
+      }
+      const res = await fetch(localUri);
+      if (!res.ok) {
+        throw new Error('Could not read image');
+      }
+      const buf = await res.arrayBuffer();
+      const lower = localUri.toLowerCase();
+      const mime =
+        contentType ??
+        (lower.endsWith('.png') ? 'image/png' : lower.endsWith('.webp') ? 'image/webp' : 'image/jpeg');
+      const ext = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: upErr } = await sb.storage.from('avatars').upload(path, buf, {
+        contentType: mime,
+        upsert: true,
+      });
+      if (upErr) {
+        throw new Error(upErr.message);
+      }
+      const { error: patchErr } = await sb
+        .from('profiles')
+        .update({ avatar_storage_path: path })
+        .eq('id', user.id);
+      if (patchErr) {
+        throw new Error(patchErr.message);
+      }
+      return refreshSession();
+    },
     async signOut() {
       const sb = requireClient();
       const { error } = await sb.auth.signOut();

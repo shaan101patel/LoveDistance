@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 
+import { MeHeaderAvatarButton } from '@/components/navigation/MeHeaderAvatarButton';
 import { useTheme } from '@/theme/ThemeProvider';
 
 export default function SettingsStackLayout() {
@@ -12,6 +13,7 @@ export default function SettingsStackLayout() {
         headerTitleStyle: { fontWeight: '600' },
         headerShadowVisible: true,
         contentStyle: { backgroundColor: theme.colors.bg },
+        headerRight: () => <MeHeaderAvatarButton />,
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Settings' }} />

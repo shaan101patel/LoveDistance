@@ -2,6 +2,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 
+import { MeHeaderAvatarButton } from '@/components/navigation/MeHeaderAvatarButton';
 import { useTheme } from '@/theme/ThemeProvider';
 
 type FaName = ComponentProps<typeof FontAwesome>['name'];
@@ -33,6 +34,7 @@ export default function AppTabsLayout() {
           borderTopColor: theme.colors.navBarBorder,
         },
         tabBarItemStyle: { paddingVertical: 4, minWidth: 56 },
+        headerRight: () => <MeHeaderAvatarButton />,
       }}
     >
       <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: makeTabBarIcon('home') }} />
@@ -56,7 +58,7 @@ export default function AppTabsLayout() {
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: makeTabBarIcon('cog'),
+          href: null,
           headerShown: false,
         }}
       />

@@ -29,6 +29,8 @@ export type AuthService = {
   signIn(input: SignInInput): Promise<Session>;
   signUp(input: SignUpInput): Promise<Session>;
   updateProfile(partial: UpdateProfileInput): Promise<Session>;
+  /** Pick a photo from the library; uploads to storage and updates profile (mock stores local URI). */
+  uploadProfilePhoto(localUri: string, contentType?: string): Promise<Session>;
   signOut(): Promise<void>;
 };
 

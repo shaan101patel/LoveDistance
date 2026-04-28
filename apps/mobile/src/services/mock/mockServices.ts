@@ -132,6 +132,18 @@ export const mockServices: ServiceRegistry = {
       };
       return withLatency(mockDb.session);
     },
+    async uploadProfilePhoto(localUri: string) {
+      if (!mockDb.session) {
+        throw new Error('Not signed in');
+      }
+      const u = mockDb.session.user;
+      mockDb.session = {
+        ...mockDb.session,
+        user: { ...u, avatarUrl: localUri },
+        signedInAt: mockDb.session.signedInAt,
+      };
+      return withLatency(mockDb.session);
+    },
     async signOut() {
       mockDb.session = null;
       mockDb.couple = null;
