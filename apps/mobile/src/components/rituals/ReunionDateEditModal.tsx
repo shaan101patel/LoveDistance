@@ -6,9 +6,10 @@ import { Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'r
 
 import { Button } from '@/components/primitives';
 import {
-  localCalendarDateFromReunionIso,
-  reunionEndOfLocalDayIso,
-  reunionIsoFromLocalDate,
+  calendarDateForReunionPicker,
+  formatYmdInTimeZone,
+  reunionEndOfDayIsoFromYmdInZone,
+  reunionIsoFromYmdInZone,
 } from '@/features/rituals/ritualTimePresentation';
 import { formatYmdLocal, parseYmdLocal } from '@/lib/calendarDates';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -19,10 +20,14 @@ export type ReunionWindowSavePayload = {
   reunionEndDate: string;
 };
 
-function defaultStartCalendarDate(): Date {
-  const t = new Date();
-  t.setDate(t.getDate() + 14);
-  return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+function defaultStartCalendarDate(homeTimeZone: string): Date {
+  const todayYmd = formatYmdInTimeZone(new Date(), homeTimeZone);
+  const base = parseYmdLocal(todayYmd);
+  if (!base) {
+    return new Date();
+  }
+  base.setDate(base.getDate() + 14);
+  return base;
 }
 
 function defaultEndFromStart(start: Date): Date {
@@ -31,14 +36,19 @@ function defaultEndFromStart(start: Date): Date {
   return t;
 }
 
-function localDayOnOrAfter(a: Date, b: Date): boolean {
-  return formatYmdLocal(a) >= formatYmdLocal(b);
+function ymdFaceFromPickerDate(d: Date): string {
+  return formatYmdLocal(d);
+}
+
+function localYmdOnOrAfter(a: Date, b: Date): boolean {
+  return ymdFaceFromPickerDate(a) >= ymdFaceFromPickerDate(b);
 }
 
 type AndroidPickerTarget = 'start' | 'end';
 
 type Props = {
   visible: boolean;
+  homeTimeZone: string;
   initialReunionIso?: string;
   initialReunionEndIso?: string;
   canClear: boolean;
@@ -51,6 +61,7 @@ type Props = {
 
 export function ReunionDateEditModal({
   visible,
+  homeTimeZone,
   initialReunionIso,
   initialReunionEndIso,
   canClear,
@@ -61,30 +72,34 @@ export function ReunionDateEditModal({
   errorText,
 }: Props) {
   const theme = useTheme();
-  const [draftStart, setDraftStart] = useState(() => defaultStartCalendarDate());
-  const [draftEnd, setDraftEnd] = useState(() => defaultEndFromStart(defaultStartCalendarDate()));
-  const [webYmdStart, setWebYmdStart] = useState(() => formatYmdLocal(defaultStartCalendarDate()));
+  const [draftStart, setDraftStart] = useState(() => defaultStartCalendarDate(homeTimeZone));
+  const [draftEnd, setDraftEnd] = useState(() =>
+    defaultEndFromStart(defaultStartCalendarDate(homeTimeZone)),
+  );
+  const [webYmdStart, setWebYmdStart] = useState(() =>
+    formatYmdLocal(defaultStartCalendarDate(homeTimeZone)),
+  );
   const [webYmdEnd, setWebYmdEnd] = useState(() =>
-    formatYmdLocal(defaultEndFromStart(defaultStartCalendarDate())),
+    formatYmdLocal(defaultEndFromStart(defaultStartCalendarDate(homeTimeZone))),
   );
   const [androidPicker, setAndroidPicker] = useState<AndroidPickerTarget | null>(null);
   const [webParseError, setWebParseError] = useState<string | null>(null);
 
   const resetDraft = useCallback(() => {
     const start = initialReunionIso
-      ? localCalendarDateFromReunionIso(initialReunionIso)
-      : defaultStartCalendarDate();
+      ? calendarDateForReunionPicker(initialReunionIso, homeTimeZone)
+      : defaultStartCalendarDate(homeTimeZone);
     const end = initialReunionEndIso
-      ? localCalendarDateFromReunionIso(initialReunionEndIso)
+      ? calendarDateForReunionPicker(initialReunionEndIso, homeTimeZone)
       : initialReunionIso
-        ? localCalendarDateFromReunionIso(initialReunionEndIso ?? initialReunionIso)
+        ? calendarDateForReunionPicker(initialReunionEndIso ?? initialReunionIso, homeTimeZone)
         : defaultEndFromStart(start);
-    const endAdjusted = localDayOnOrAfter(end, start) ? end : start;
+    const endAdjusted = localYmdOnOrAfter(end, start) ? end : start;
     setDraftStart(start);
     setDraftEnd(endAdjusted);
     setWebYmdStart(formatYmdLocal(start));
     setWebYmdEnd(formatYmdLocal(endAdjusted));
-  }, [initialReunionIso, initialReunionEndIso]);
+  }, [initialReunionIso, initialReunionEndIso, homeTimeZone]);
 
   useEffect(() => {
     if (visible) {
@@ -95,14 +110,16 @@ export function ReunionDateEditModal({
   }, [visible, resetDraft]);
 
   const persistNative = async () => {
-    if (!localDayOnOrAfter(draftEnd, draftStart)) {
+    if (!localYmdOnOrAfter(draftEnd, draftStart)) {
       setWebParseError('End date must be on or after the start date.');
       return;
     }
     setWebParseError(null);
+    const startYmd = ymdFaceFromPickerDate(draftStart);
+    const endYmd = ymdFaceFromPickerDate(draftEnd);
     await onSave({
-      reunionDate: reunionIsoFromLocalDate(draftStart),
-      reunionEndDate: reunionEndOfLocalDayIso(draftEnd),
+      reunionDate: reunionIsoFromYmdInZone(startYmd, homeTimeZone),
+      reunionEndDate: reunionEndOfDayIsoFromYmdInZone(endYmd, homeTimeZone),
     });
   };
 
@@ -113,14 +130,14 @@ export function ReunionDateEditModal({
       setWebParseError('Use valid YYYY-MM-DD for both dates.');
       return;
     }
-    if (!localDayOnOrAfter(end, start)) {
+    if (!localYmdOnOrAfter(end, start)) {
       setWebParseError('End date must be on or after the start date.');
       return;
     }
     setWebParseError(null);
     await onSave({
-      reunionDate: reunionIsoFromLocalDate(start),
-      reunionEndDate: reunionEndOfLocalDayIso(end),
+      reunionDate: reunionIsoFromYmdInZone(webYmdStart.trim(), homeTimeZone),
+      reunionEndDate: reunionEndOfDayIsoFromYmdInZone(webYmdEnd.trim(), homeTimeZone),
     });
   };
 
@@ -129,7 +146,7 @@ export function ReunionDateEditModal({
     if (event.type === 'set' && date) {
       if (target === 'start') {
         setDraftStart(date);
-        setDraftEnd((prev) => (localDayOnOrAfter(prev, date) ? prev : date));
+        setDraftEnd((prev) => (localYmdOnOrAfter(prev, date) ? prev : date));
       } else {
         setDraftEnd(date);
       }
@@ -171,7 +188,7 @@ export function ReunionDateEditModal({
           onChange={(_e, date) => {
             if (!date) return;
             setDraftStart(date);
-            setDraftEnd((prev) => (localDayOnOrAfter(prev, date) ? prev : date));
+            setDraftEnd((prev) => (localYmdOnOrAfter(prev, date) ? prev : date));
           }}
         />
       </View>
@@ -184,7 +201,7 @@ export function ReunionDateEditModal({
           themeVariant={theme.scheme === 'dark' ? 'dark' : 'light'}
           onChange={(_e, date) => {
             if (!date) return;
-            setDraftEnd(localDayOnOrAfter(date, draftStart) ? date : draftStart);
+            setDraftEnd(localYmdOnOrAfter(date, draftStart) ? date : draftStart);
           }}
         />
       </View>
@@ -288,7 +305,8 @@ export function ReunionDateEditModal({
           <View style={card}>
             <Text style={{ ...typeBase.h2, color: theme.colors.textPrimary }}>Reunion dates</Text>
             <Text style={{ ...typeBase.bodySm, color: theme.colors.textSecondary }}>
-              Countdown uses the start date; together-time uses through the end date.
+              Countdown uses the start date; together-time uses through the end date. Calendar days use your
+              profile time zone ({homeTimeZone}).
             </Text>
 
             {Platform.OS === 'web' ? webFields : Platform.OS === 'android' ? androidPickers : iosPickers}

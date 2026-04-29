@@ -1,4 +1,4 @@
-import type { ServiceRegistry } from '@/services/ports';
+import type { PromoRedeemResult, ServiceRegistry } from '@/services/ports';
 import { getPathFromRef, parseDeepLink } from '@/lib/deepLinking/deepLinkService';
 import { weekMetaFromMondayYmd } from '@/features/weeklyRecap/recapCandidateFilter';
 import { isSupabaseConfigured, supabaseClient } from '@/services/supabase/client';
@@ -93,13 +93,17 @@ export const supabaseServices: ServiceRegistry = {
       if (!user) {
         throw new Error('Not signed in');
       }
-      const patch: { first_name?: string; display_name?: string | null } = {};
+      const patch: { first_name?: string; display_name?: string | null; time_zone?: string | null } = {};
       if (partial.firstName !== undefined) {
         patch.first_name = partial.firstName.trim();
       }
       if (partial.displayName !== undefined) {
         const d = partial.displayName.trim();
         patch.display_name = d.length ? d : null;
+      }
+      if (partial.timeZone !== undefined) {
+        const z = partial.timeZone?.trim();
+        patch.time_zone = z && z.length ? z : null;
       }
       if (Object.keys(patch).length > 0) {
         const { error } = await sb.from('profiles').update(patch).eq('id', user.id);
@@ -239,6 +243,24 @@ export const supabaseServices: ServiceRegistry = {
         throw new Error(error.message);
       }
       return supabaseServices.subscription.getSubscription();
+    },
+    async redeemPromoCode(code: string): Promise<PromoRedeemResult> {
+      const sb = requireClient();
+      const { data, error } = await sb.rpc('redeem_plus_promo', { p_code: code });
+      if (error) {
+        throw new Error(error.message);
+      }
+      const row = data as { ok?: boolean; error?: string } | null;
+      if (!row || typeof row.ok !== 'boolean') {
+        throw new Error('Unexpected redeem response');
+      }
+      if (row.ok) {
+        return { ok: true };
+      }
+      if (row.error === 'invalid_code' || row.error === 'couple_required') {
+        return { ok: false, error: row.error };
+      }
+      return { ok: false, error: 'invalid_code' };
     },
   },
   weeklyRecap: {

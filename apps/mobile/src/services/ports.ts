@@ -22,7 +22,12 @@ import type {
 
 export type SignInInput = { email: string; password: string };
 export type SignUpInput = { email: string; password: string; firstName: string };
-export type UpdateProfileInput = { firstName?: string; displayName?: string };
+export type UpdateProfileInput = {
+  firstName?: string;
+  displayName?: string;
+  /** Set to null to clear override and use device timezone. */
+  timeZone?: string | null;
+};
 
 export type AuthService = {
   getSession(): Promise<Session | null>;
@@ -153,8 +158,15 @@ export type WeeklyRecapService = {
   }): Promise<WeeklyRecapDraft>;
 };
 
+export type PromoRedeemErrorCode = 'invalid_code' | 'couple_required';
+
+export type PromoRedeemResult =
+  | { ok: true }
+  | { ok: false; error: PromoRedeemErrorCode };
+
 export type SubscriptionService = {
   getSubscription(): Promise<SubscriptionState>;
+  redeemPromoCode(code: string): Promise<PromoRedeemResult>;
   /** Mock-only QA hook; omit in store-backed implementations. */
   setMockTier?(tier: SubscriptionTier): Promise<SubscriptionState>;
 };

@@ -25,6 +25,7 @@ export const mockMe: UserProfile = {
 export const mockPartner: UserProfile = {
   id: 'user-partner',
   firstName: 'Partner',
+  timeZone: 'Europe/London',
 };
 
 export const initialPromptThread: PromptThread = {

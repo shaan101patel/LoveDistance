@@ -60,7 +60,7 @@ export async function loadCompleteCoupleProfile(): Promise<CoupleProfile | null>
 
   const { data: profiles } = await sb
     .from('profiles')
-    .select('id, first_name, display_name')
+    .select('id, first_name, display_name, time_zone')
     .in('id', [user.id, partnerId]);
 
   const partnerRow = profiles?.find((p) => p.id === partnerId);
@@ -68,6 +68,7 @@ export async function loadCompleteCoupleProfile(): Promise<CoupleProfile | null>
     id: partnerId,
     firstName: partnerRow?.first_name?.trim() || 'Partner',
     displayName: partnerRow?.display_name ?? undefined,
+    timeZone: partnerRow?.time_zone ?? null,
   };
 
   return {

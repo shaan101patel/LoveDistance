@@ -34,6 +34,7 @@ export function mapUserProfile(user: User, row: Tables<'profiles'> | null): User
     email: user.email ?? undefined,
     displayName: row?.display_name ?? (typeof fromMeta?.display_name === 'string' ? fromMeta.display_name : undefined),
     avatarUrl: publicAvatarUrl(row?.avatar_storage_path ?? undefined),
+    timeZone: row?.time_zone ?? null,
   };
 }
 

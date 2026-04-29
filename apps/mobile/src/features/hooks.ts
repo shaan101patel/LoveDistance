@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useServices } from '@/services/ServiceContext';
-import type { UpdateReunionDatesInput } from '@/services/ports';
+import type { PromoRedeemResult, UpdateReunionDatesInput } from '@/services/ports';
 import { hasPremiumAccess } from '@/features/premium/entitlements';
 import type {
   CoupleProfile,
@@ -444,6 +444,19 @@ export function useSetMockSubscriptionTier() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    },
+  });
+}
+
+export function useRedeemPromoCode() {
+  const services = useServices();
+  const queryClient = useQueryClient();
+  return useMutation<PromoRedeemResult, Error, string>({
+    mutationFn: (code: string) => services.subscription.redeemPromoCode(code),
+    onSuccess: (result) => {
+      if (result.ok) {
+        void queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      }
     },
   });
 }

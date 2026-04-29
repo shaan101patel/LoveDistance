@@ -26,11 +26,12 @@ import {
   upsertPromptPhotoFusionMemory,
 } from '@/services/mock/mockData';
 import { getPathFromRef, parseDeepLink } from '@/lib/deepLinking/deepLinkService';
-import { addLocalDays } from '@/lib/calendarDates';
+import { addLocalDays, formatYmdLocal } from '@/lib/calendarDates';
 import {
-  reunionEndOfLocalDayIso,
-  reunionIsoFromLocalDate,
+  reunionEndOfDayIsoFromYmdInZone,
+  reunionIsoFromYmdInZone,
 } from '@/features/rituals/ritualTimePresentation';
+import { resolveUserTimeZone } from '@/lib/userTimeZone';
 import { isUserAllowedToToggleHabit } from '@/features/habits/habitPolicy';
 import {
   filterPresencePostsInWeek,
@@ -126,12 +127,19 @@ export const mockServices: ServiceRegistry = {
         throw new Error('Not signed in');
       }
       const u = mockDb.session.user;
+      const nextTz =
+        partial.timeZone !== undefined
+          ? partial.timeZone != null && partial.timeZone.trim().length > 0
+            ? partial.timeZone.trim()
+            : null
+          : u.timeZone;
       mockDb.session = {
         ...mockDb.session,
         user: {
           ...u,
           firstName: partial.firstName?.trim() ?? u.firstName,
           displayName: partial.displayName?.trim() ?? u.displayName,
+          timeZone: nextTz,
         },
         signedInAt: mockDb.session.signedInAt,
       };
@@ -214,12 +222,15 @@ export const mockServices: ServiceRegistry = {
       const startAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 42);
       const startCal = new Date(startAt.getFullYear(), startAt.getMonth(), startAt.getDate());
       const endCal = addLocalDays(startCal, 6);
+      const tz = resolveUserTimeZone(mockDb.session?.user.timeZone);
+      const startYmd = formatYmdLocal(startCal);
+      const endYmd = formatYmdLocal(endCal);
       mockDb.couple = {
         id: `couple-${normalized}`,
         meId: mockDb.session?.user.id ?? mockMe.id,
         partner: mockPartner,
-        reunionDate: reunionIsoFromLocalDate(startCal),
-        reunionEndDate: reunionEndOfLocalDayIso(endCal),
+        reunionDate: reunionIsoFromYmdInZone(startYmd, tz),
+        reunionEndDate: reunionEndOfDayIsoFromYmdInZone(endYmd, tz),
       };
       return withLatency({ ...mockDb.couple });
     },
@@ -590,6 +601,22 @@ export const mockServices: ServiceRegistry = {
         source: 'mock',
       };
       return withLatency({ ...mockDb.subscription });
+    },
+    async redeemPromoCode(code: string) {
+      const normalized = code.trim().toUpperCase();
+      if (normalized !== 'BG') {
+        return withLatency({ ok: false as const, error: 'invalid_code' as const });
+      }
+      if (!mockDb.couple) {
+        return withLatency({ ok: false as const, error: 'couple_required' as const });
+      }
+      mockDb.subscription = {
+        ...mockDb.subscription,
+        tier: 'premium',
+        renewsAtIso: '2027-01-01T00:00:00.000Z',
+        source: 'mock',
+      };
+      return withLatency({ ok: true as const });
     },
   },
 };

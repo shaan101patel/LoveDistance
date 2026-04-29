@@ -313,6 +313,7 @@ export type Database = {
           first_name: string;
           id: string;
           subscription_tier: string;
+          time_zone: string | null;
           updated_at: string;
         };
         Insert: {
@@ -322,6 +323,7 @@ export type Database = {
           first_name?: string;
           id: string;
           subscription_tier?: string;
+          time_zone?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -331,6 +333,7 @@ export type Database = {
           first_name?: string;
           id?: string;
           subscription_tier?: string;
+          time_zone?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -615,6 +618,7 @@ export type Database = {
     };
     Functions: {
       create_invite: { Args: { expires_in?: string }; Returns: Json };
+      redeem_plus_promo: { Args: { p_code: string }; Returns: Json };
       is_member_of_couple: {
         Args: { p_couple_id: string; p_user_id: string };
         Returns: boolean;

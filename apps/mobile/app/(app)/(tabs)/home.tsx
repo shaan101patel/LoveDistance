@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, type Href } from 'expo-router';
 import { useLayoutEffect, useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -13,13 +13,16 @@ import {
   StreakPreviewPlaceholder,
   StoryHighlightsBlock,
 } from '@/components/home';
-import { ReunionCountdownCard, RitualShortcutsStrip } from '@/components/rituals';
+import { ReunionCountdownCard } from '@/components/rituals';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useCouple, useCurrentUserId, useHabits, usePresenceFeed, useTodayPrompt } from '@/features/hooks';
 import { composeHomeFeed } from '@/features/home/homeFeedComposer';
+import { MOCK_PARTNER_TIME_ZONE } from '@/features/rituals/ritualTimePresentation';
 import { isMorningRitualCompleteForUser } from '@/features/rituals/morningRitual';
 import { formatYmdLocal, toMonthKey } from '@/lib/calendarDates';
+import { resolveUserTimeZone } from '@/lib/userTimeZone';
+import { useServices } from '@/services/ServiceContext';
 import {
   devSimulatePartnerTodayAnswer,
   devSimulatePartnerTodayReaction,
@@ -49,6 +52,11 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const theme = useTheme();
   const queryClient = useQueryClient();
+  const services = useServices();
+  const { data: session } = useQuery({
+    queryKey: ['auth', 'session'],
+    queryFn: () => services.auth.getSession(),
+  });
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -66,6 +74,8 @@ export default function HomeScreen() {
     meId && isMorningRitualCompleteForUser(habits, meId, todayYmd),
   );
   const partner = couple?.partner;
+  const homeTimeZone = resolveUserTimeZone(session?.user.timeZone);
+  const partnerTimeZone = partner?.timeZone?.trim() || MOCK_PARTNER_TIME_ZONE;
 
   const homeFeed = useMemo(() => {
     if (!couple || !thread || !meId) {
@@ -114,8 +124,9 @@ export default function HomeScreen() {
                 reunionIso={couple.reunionDate}
                 reunionEndIso={couple.reunionEndDate}
                 partnerFirstName={partner.firstName}
+                homeTimeZone={homeTimeZone}
+                partnerTimeZone={partnerTimeZone}
               />
-              <RitualShortcutsStrip partnerFirstName={partner.firstName} />
               <DailyPromptCard daily={homeFeed.daily} />
               {presencePosts?.[0] ? (
                 <LatestSharedPhotoBlock

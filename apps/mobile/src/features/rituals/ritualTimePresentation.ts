@@ -1,8 +1,74 @@
+import { formatInTimeZone, toDate } from 'date-fns-tz';
+
+import { formatYmdLocal, parseYmdLocal } from '@/lib/calendarDates';
+
 /**
- * Mock-only IANA zones for LDR presentation demos (no profile fields yet).
+ * Fallback IANA zones when partner has not set `profiles.time_zone`.
  */
 export const MOCK_ME_TIME_ZONE = 'America/Los_Angeles' as const;
 export const MOCK_PARTNER_TIME_ZONE = 'Europe/London' as const;
+
+export function deviceTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+export function formatYmdInTimeZone(d: Date, timeZone: string): string {
+  return formatInTimeZone(d, timeZone, 'yyyy-MM-dd');
+}
+
+/** Calendar `YYYY-MM-DD` for an instant in `timeZone`. */
+export function ymdInZoneFromIso(iso: string, timeZone: string): string {
+  return formatInTimeZone(new Date(iso), timeZone, 'yyyy-MM-dd');
+}
+
+/** Noon on the given calendar day in `timeZone`, as ISO UTC string (reunion start anchor). */
+export function reunionIsoFromYmdInZone(ymd: string, timeZone: string): string {
+  const trimmed = ymd.trim();
+  const d = toDate(`${trimmed}T12:00:00`, { timeZone });
+  if (Number.isNaN(d.getTime())) {
+    throw new Error(`Invalid reunion date: ${ymd}`);
+  }
+  return d.toISOString();
+}
+
+/** End of calendar day in `timeZone` (23:59:59.999), as ISO UTC string. */
+export function reunionEndOfDayIsoFromYmdInZone(ymd: string, timeZone: string): string {
+  const trimmed = ymd.trim();
+  const d = toDate(`${trimmed}T23:59:59.999`, { timeZone });
+  if (Number.isNaN(d.getTime())) {
+    throw new Error(`Invalid reunion end date: ${ymd}`);
+  }
+  return d.toISOString();
+}
+
+/**
+ * `Date` at local midnight for the reunion’s calendar day in `timeZone` (face-value Y/M/D for pickers).
+ */
+export function calendarDateForReunionPicker(reunionIso: string, timeZone: string): Date {
+  const ymd = ymdInZoneFromIso(reunionIso, timeZone);
+  const parsed = parseYmdLocal(ymd);
+  if (!parsed) {
+    return new Date(reunionIso);
+  }
+  return parsed;
+}
+
+/** @deprecated Prefer `calendarDateForReunionPicker(iso, deviceTimeZone())` */
+export function localCalendarDateFromReunionIso(reunionIso: string): Date {
+  return calendarDateForReunionPicker(reunionIso, deviceTimeZone());
+}
+
+/** @deprecated Prefer `reunionIsoFromYmdInZone` with explicit zone */
+export function reunionIsoFromLocalDate(d: Date): string {
+  const ymd = formatYmdLocal(d);
+  return reunionIsoFromYmdInZone(ymd, deviceTimeZone());
+}
+
+/** @deprecated Prefer `reunionEndOfDayIsoFromYmdInZone` with explicit zone */
+export function reunionEndOfLocalDayIso(d: Date): string {
+  const ymd = formatYmdLocal(d);
+  return reunionEndOfDayIsoFromYmdInZone(ymd, deviceTimeZone());
+}
 
 export function formatClockInTimeZone(date: Date, timeZone: string): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -25,9 +91,6 @@ function hourInTimeZone(date: Date, timeZone: string): number {
   return h != null ? Number(h) : 0;
 }
 
-/**
- * Soft copy for “what time of day is it for them?” (hour buckets in partner zone).
- */
 export function partnerRelativeDaypart(now: Date, partnerTimeZone: string): string {
   const h = hourInTimeZone(now, partnerTimeZone);
   if (h >= 5 && h < 12) return 'morning there';
@@ -44,53 +107,6 @@ export type ReunionCountdownParts = {
   isPast: boolean;
 };
 
-/** Local calendar date from a stored reunion instant (for pickers). */
-export function localCalendarDateFromReunionIso(reunionIso: string): Date {
-  const d = new Date(reunionIso);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
-/** Midday local on the chosen calendar day — stable all-day reunion anchor. */
-export function reunionIsoFromLocalDate(d: Date): string {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0, 0).toISOString();
-}
-
-/** End of local calendar day for the visit’s last day. */
-export function reunionEndOfLocalDayIso(d: Date): string {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).toISOString();
-}
-
-/** When no explicit end is stored, treat the visit as the reunion start calendar day only. */
-export function effectiveReunionEndIso(startIso: string, endIso: string | undefined): string {
-  if (endIso) {
-    return endIso;
-  }
-  return reunionEndOfLocalDayIso(localCalendarDateFromReunionIso(startIso));
-}
-
-export type ReunionVisitPhase = 'upcoming' | 'together' | 'ended';
-
-export function reunionVisitPhase(
-  startIso: string,
-  endIso: string | undefined,
-  now: Date,
-): ReunionVisitPhase {
-  const startMs = new Date(startIso).getTime();
-  const endMs = new Date(effectiveReunionEndIso(startIso, endIso)).getTime();
-  const t = now.getTime();
-  if (t < startMs) return 'upcoming';
-  if (t <= endMs) return 'together';
-  return 'ended';
-}
-
-/** Inclusive calendar days from “today” through the visit end (0 when past end day). */
-export function visitCalendarDaysRemaining(now: Date, endIso: string): number {
-  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const endDay = localCalendarDateFromReunionIso(endIso);
-  const diffDays = Math.round((endDay.getTime() - nowDay.getTime()) / (24 * 60 * 60 * 1000));
-  return Math.max(0, diffDays + 1);
-}
-
 export function reunionCountdownParts(reunionIso: string, now: Date): ReunionCountdownParts {
   const target = new Date(reunionIso);
   const totalMs = target.getTime() - now.getTime();
@@ -102,6 +118,49 @@ export function reunionCountdownParts(reunionIso: string, now: Date): ReunionCou
   const days = Math.floor(totalHours / 24);
   const hours = totalHours % 24;
   return { totalMs, days, hours, isPast: false };
+}
+
+export function effectiveReunionEndIso(
+  startIso: string,
+  endIso: string | undefined,
+  timeZone: string,
+): string {
+  if (endIso) {
+    return endIso;
+  }
+  const ymd = ymdInZoneFromIso(startIso, timeZone);
+  return reunionEndOfDayIsoFromYmdInZone(ymd, timeZone);
+}
+
+export type ReunionVisitPhase = 'upcoming' | 'together' | 'ended';
+
+export function reunionVisitPhase(
+  startIso: string,
+  endIso: string | undefined,
+  now: Date,
+  timeZone: string = deviceTimeZone(),
+): ReunionVisitPhase {
+  const startMs = new Date(startIso).getTime();
+  const endMs = new Date(effectiveReunionEndIso(startIso, endIso, timeZone)).getTime();
+  const t = now.getTime();
+  if (t < startMs) return 'upcoming';
+  if (t <= endMs) return 'together';
+  return 'ended';
+}
+
+export function visitCalendarDaysRemaining(now: Date, endIso: string, timeZone: string): number {
+  const nowYmd = formatYmdInTimeZone(now, timeZone);
+  const endYmd = ymdInZoneFromIso(endIso, timeZone);
+  const nowDay = parseYmdLocal(nowYmd);
+  const endDay = parseYmdLocal(endYmd);
+  if (!nowDay || !endDay) return 0;
+  const diffDays = Math.round((endDay.getTime() - nowDay.getTime()) / (24 * 60 * 60 * 1000));
+  return Math.max(0, diffDays + 1);
+}
+
+/** Short reunion line for headers (weekday, month, day, year) in `timeZone`. */
+export function reunionDateLabelInZone(iso: string, timeZone: string): string {
+  return formatInTimeZone(new Date(iso), timeZone, 'EEE, MMM d, yyyy');
 }
 
 export function formatReunionInBothZones(

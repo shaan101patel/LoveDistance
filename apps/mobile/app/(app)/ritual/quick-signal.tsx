@@ -38,12 +38,12 @@ export default function QuickSignalScreen() {
       ? 'A short line your partner can read when they wake up. Saved in mock data only—no push yet.'
       : kind === 'miss_you'
         ? 'Tell them you are thinking of them. Mock-only log for now.'
-        : 'Pick a valid ritual from Home.';
+        : 'This screen needs a ritual type in the link (good_night or miss_you).';
 
   if (!kind) {
     return (
       <SectionScaffold kicker="Rituals" title="Quick signal" lead={lead} scrollable>
-        <Body>Use Home quick rituals to open this screen with a kind.</Body>
+        <Body>Open this screen with ?kind=good_night or ?kind=miss_you in the URL.</Body>
         <Button label="Back" onPress={() => router.back()} />
       </SectionScaffold>
     );

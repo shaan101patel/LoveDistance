@@ -4,17 +4,16 @@ import { Pressable, Text, View } from 'react-native';
 import { ReunionDateEditModal } from '@/components/rituals/ReunionDateEditModal';
 import { useUpdateReunionDates } from '@/features/hooks';
 import {
-  MOCK_ME_TIME_ZONE,
-  MOCK_PARTNER_TIME_ZONE,
   effectiveReunionEndIso,
   formatReunionInBothZones,
-  localCalendarDateFromReunionIso,
+  formatYmdInTimeZone,
   partnerRelativeDaypart,
   reunionCountdownParts,
+  reunionDateLabelInZone,
   reunionVisitPhase,
   visitCalendarDaysRemaining,
+  ymdInZoneFromIso,
 } from '@/features/rituals/ritualTimePresentation';
-import { formatYmdLocal } from '@/lib/calendarDates';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing, typeBase } from '@/theme/tokens';
 
@@ -22,25 +21,28 @@ type Props = {
   reunionIso?: string;
   reunionEndIso?: string;
   partnerFirstName: string;
+  homeTimeZone: string;
+  partnerTimeZone: string;
 };
 
-function reunionDayLabel(iso: string): string {
-  return localCalendarDateFromReunionIso(iso).toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+function shortTzLabel(tz: string): string {
+  return tz.replace(/_/g, ' ');
 }
 
-function rangeCaption(startIso: string, endIso: string | undefined): string {
-  const endEffective = effectiveReunionEndIso(startIso, endIso);
-  const a = reunionDayLabel(startIso);
-  const b = reunionDayLabel(endEffective);
+function rangeCaption(startIso: string, endIso: string | undefined, homeTz: string): string {
+  const endEffective = effectiveReunionEndIso(startIso, endIso, homeTz);
+  const a = reunionDateLabelInZone(startIso, homeTz);
+  const b = reunionDateLabelInZone(endEffective, homeTz);
   return a === b ? a : `${a} → ${b}`;
 }
 
-export function ReunionCountdownCard({ reunionIso, reunionEndIso, partnerFirstName }: Props) {
+export function ReunionCountdownCard({
+  reunionIso,
+  reunionEndIso,
+  partnerFirstName,
+  homeTimeZone,
+  partnerTimeZone,
+}: Props) {
   const theme = useTheme();
   const now = new Date();
   const [editorOpen, setEditorOpen] = useState(false);
@@ -77,6 +79,7 @@ export function ReunionCountdownCard({ reunionIso, reunionEndIso, partnerFirstNa
         </View>
         <ReunionDateEditModal
           visible={editorOpen}
+          homeTimeZone={homeTimeZone}
           initialReunionIso={undefined}
           initialReunionEndIso={undefined}
           canClear={false}
@@ -103,16 +106,16 @@ export function ReunionCountdownCard({ reunionIso, reunionEndIso, partnerFirstNa
     );
   }
 
-  const phase = reunionVisitPhase(reunionIso, reunionEndIso, now);
+  const phase = reunionVisitPhase(reunionIso, reunionEndIso, now, homeTimeZone);
   const parts = reunionCountdownParts(reunionIso, now);
-  const dual = formatReunionInBothZones(reunionIso, MOCK_ME_TIME_ZONE, MOCK_PARTNER_TIME_ZONE);
-  const daypart = partnerRelativeDaypart(now, MOCK_PARTNER_TIME_ZONE);
-  const endEffectiveIso = effectiveReunionEndIso(reunionIso, reunionEndIso);
-  const endDay = localCalendarDateFromReunionIso(endEffectiveIso);
+  const dual = formatReunionInBothZones(reunionIso, homeTimeZone, partnerTimeZone);
+  const daypart = partnerRelativeDaypart(now, partnerTimeZone);
+  const endEffectiveIso = effectiveReunionEndIso(reunionIso, reunionEndIso, homeTimeZone);
   const isLastVisitDay =
-    phase === 'together' && formatYmdLocal(now) === formatYmdLocal(endDay);
+    phase === 'together' &&
+    formatYmdInTimeZone(now, homeTimeZone) === ymdInZoneFromIso(endEffectiveIso, homeTimeZone);
   const daysLeftInVisit =
-    phase === 'together' ? visitCalendarDaysRemaining(now, endEffectiveIso) : 0;
+    phase === 'together' ? visitCalendarDaysRemaining(now, endEffectiveIso, homeTimeZone) : 0;
 
   return (
     <>
@@ -129,7 +132,7 @@ export function ReunionCountdownCard({ reunionIso, reunionEndIso, partnerFirstNa
         <Text style={{ ...typeBase.caption, color: theme.colors.textMuted }}>Reunion countdown</Text>
         <Pressable onPress={openEditor} style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}>
           <Text style={{ ...typeBase.bodySm, color: theme.colors.primary, fontWeight: '600' }}>
-            {rangeCaption(reunionIso, reunionEndIso)} · Tap to edit
+            {rangeCaption(reunionIso, reunionEndIso, homeTimeZone)} · Tap to edit
           </Text>
         </Pressable>
         {phase === 'ended' ? (
@@ -145,7 +148,7 @@ export function ReunionCountdownCard({ reunionIso, reunionEndIso, partnerFirstNa
                 : `${daysLeftInVisit} day${daysLeftInVisit === 1 ? '' : 's'} left in your visit window.`}
             </Text>
             <Text style={{ ...typeBase.bodySm, color: theme.colors.textSecondary }}>
-              For {partnerFirstName}, it is {daypart} (mock time zones: LA vs London).
+              For {partnerFirstName}, it is {daypart} ({shortTzLabel(partnerTimeZone)}).
             </Text>
           </>
         ) : (
@@ -154,7 +157,7 @@ export function ReunionCountdownCard({ reunionIso, reunionEndIso, partnerFirstNa
               {parts.days}d {parts.hours}h to go
             </Text>
             <Text style={{ ...typeBase.bodySm, color: theme.colors.textSecondary }}>
-              For {partnerFirstName}, it is {daypart} (mock time zones: LA vs London).
+              For {partnerFirstName}, it is {daypart} ({shortTzLabel(partnerTimeZone)}).
             </Text>
           </>
         )}
@@ -162,12 +165,14 @@ export function ReunionCountdownCard({ reunionIso, reunionEndIso, partnerFirstNa
           <Text style={{ ...typeBase.caption, color: theme.colors.textSecondary }}>{dual.meLine}</Text>
           <Text style={{ ...typeBase.caption, color: theme.colors.textSecondary }}>{dual.partnerLine}</Text>
           <Text style={{ ...typeBase.caption, color: theme.colors.textMuted }}>
-            Visit through {reunionDayLabel(endEffectiveIso)} (your time)
+            Visit through {reunionDateLabelInZone(endEffectiveIso, homeTimeZone)} (your time,{' '}
+            {shortTzLabel(homeTimeZone)})
           </Text>
         </View>
       </View>
       <ReunionDateEditModal
         visible={editorOpen}
+        homeTimeZone={homeTimeZone}
         initialReunionIso={reunionIso}
         initialReunionEndIso={reunionEndIso}
         canClear

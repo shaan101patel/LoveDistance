@@ -5,6 +5,8 @@ export type UserProfile = {
   displayName?: string;
   /** Resolved public URL (Supabase) or local file URI (mock) when set. */
   avatarUrl?: string;
+  /** IANA timezone (e.g. America/Chicago); null/undefined = use device default. */
+  timeZone?: string | null;
 };
 
 export type Session = {

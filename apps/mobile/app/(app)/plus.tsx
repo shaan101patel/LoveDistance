@@ -1,15 +1,24 @@
 import { router, type Href } from 'expo-router';
+import { useState } from 'react';
 import { Text, View } from 'react-native';
 
-import { Button } from '@/components/primitives';
+import { Button, Input } from '@/components/primitives';
 import { PremiumBadge } from '@/components/premium';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
-import { useSetMockSubscriptionTier, useSubscription } from '@/features/hooks';
+import { useRedeemPromoCode, useSetMockSubscriptionTier, useSubscription } from '@/features/hooks';
 import { isPremiumTier } from '@/features/premium/entitlements';
+import type { PromoRedeemErrorCode } from '@/services/ports';
 import { useServices } from '@/services/ServiceContext';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
+
+function promoErrorMessage(code: PromoRedeemErrorCode): string {
+  if (code === 'invalid_code') {
+    return 'That code is not valid.';
+  }
+  return 'Finish pairing with your partner first—this code unlocks Plus for both of you.';
+}
 
 const perks = [
   'Extra prompt packs for slow weeks and special seasons',
@@ -24,9 +33,29 @@ export default function PlusHubScreen() {
   const services = useServices();
   const { data: sub, isLoading } = useSubscription();
   const setTier = useSetMockSubscriptionTier();
+  const redeemPromo = useRedeemPromoCode();
+  const [promoCode, setPromoCode] = useState('');
+  const [promoFieldError, setPromoFieldError] = useState<string | null>(null);
+  const [promoSuccess, setPromoSuccess] = useState(false);
   const premium = sub ? isPremiumTier(sub) : false;
   const canMockToggle =
     __DEV__ && typeof services.subscription.setMockTier === 'function';
+
+  async function applyPromo() {
+    setPromoFieldError(null);
+    setPromoSuccess(false);
+    try {
+      const result = await redeemPromo.mutateAsync(promoCode.trim());
+      if (result.ok) {
+        setPromoSuccess(true);
+        setPromoCode('');
+      } else {
+        setPromoFieldError(promoErrorMessage(result.error));
+      }
+    } catch (e) {
+      setPromoFieldError(e instanceof Error ? e.message : 'Something went wrong. Try again.');
+    }
+  }
 
   return (
     <SectionScaffold
@@ -37,7 +66,11 @@ export default function PlusHubScreen() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs }}>
         <PremiumBadge />
         {premium ? (
-          <Text style={{ ...theme.type.caption, color: theme.colors.textMuted }}>Active on this device (mock)</Text>
+          <Text style={{ ...theme.type.caption, color: theme.colors.textMuted }}>
+            {sub?.source === 'mock'
+              ? 'Active on this device (mock)'
+              : 'Active for you and your partner.'}
+          </Text>
         ) : null}
       </View>
 
@@ -58,6 +91,42 @@ export default function PlusHubScreen() {
             <Body>We will keep the core app generous and calm—no surprise paywalls on your daily rhythm.</Body>
           </View>
         )}
+      </SectionCard>
+
+      <SectionCard>
+        <Text style={{ ...theme.type.bodySm, color: theme.colors.textPrimary, fontWeight: '600', marginBottom: spacing.sm }}>
+          Have a promo code?
+        </Text>
+        <View style={{ gap: spacing.md }}>
+          <Body>
+            If you have a code, enter it here. When you are paired with your partner, a valid code unlocks LoveDistance
+            Plus for both of you.
+          </Body>
+          <Input
+            autoCapitalize="characters"
+            autoCorrect={false}
+            editable={!redeemPromo.isPending}
+            label="Code"
+            placeholder="e.g. BG"
+            value={promoCode}
+            onChangeText={(t) => {
+              setPromoCode(t);
+              setPromoFieldError(null);
+              setPromoSuccess(false);
+            }}
+            error={promoFieldError ?? undefined}
+          />
+          {promoSuccess ? (
+            <Text style={{ ...theme.type.bodySm, color: theme.colors.textSecondary }}>
+              Plus is now active for you and your partner on this account.
+            </Text>
+          ) : null}
+          <Button
+            label="Apply code"
+            disabled={redeemPromo.isPending || !promoCode.trim()}
+            onPress={() => void applyPromo()}
+          />
+        </View>
       </SectionCard>
 
       {canMockToggle ? (

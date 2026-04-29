@@ -5,12 +5,14 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Avatar, Button, Input } from '@/components/primitives';
+import { TimeZonePickerModal } from '@/components/settings';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { isSupabaseApiMode } from '@/services/apiMode';
 import { useServices } from '@/services/ServiceContext';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
+import { resolveUserTimeZone } from '@/lib/userTimeZone';
 
 export default function SettingsProfileScreen() {
   const theme = useTheme();
@@ -26,6 +28,8 @@ export default function SettingsProfileScreen() {
   const [firstName, setFirstName] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState<string | null>(null);
+  const [timeZoneOverride, setTimeZoneOverride] = useState<string | null>(null);
+  const [tzPickerOpen, setTzPickerOpen] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
 
@@ -36,6 +40,7 @@ export default function SettingsProfileScreen() {
     setFirstName(session.user.firstName);
     setDisplayName(session.user.displayName ?? '');
     setEmail(session.user.email ?? null);
+    setTimeZoneOverride(session.user.timeZone ?? null);
   }, [session]);
 
   const uploadMut = useMutation({
@@ -82,8 +87,10 @@ export default function SettingsProfileScreen() {
       await services.auth.updateProfile({
         firstName: firstName.trim(),
         displayName: displayName.trim() || undefined,
+        timeZone: timeZoneOverride,
       });
       await queryClient.invalidateQueries({ queryKey: ['auth', 'session'] });
+      await queryClient.invalidateQueries({ queryKey: ['couple'] });
       setSaved(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save');
@@ -107,6 +114,8 @@ export default function SettingsProfileScreen() {
   }
 
   const avatarSource = session.user.avatarUrl ? { uri: session.user.avatarUrl } : undefined;
+  const resolvedTz = resolveUserTimeZone(timeZoneOverride);
+  const deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   return (
     <SectionScaffold
@@ -164,6 +173,33 @@ export default function SettingsProfileScreen() {
             {email ?? (live ? 'Not available for this account.' : 'Shown when you sign in with email (mock).')}
           </Text>
         </View>
+
+        <View style={{ marginTop: spacing.lg, gap: spacing.sm }}>
+          <Text style={{ color: theme.colors.textSecondary, fontSize: 13, marginBottom: spacing.xs }}>
+            Time zone
+          </Text>
+          <Text style={{ color: theme.colors.textPrimary, fontSize: 15, marginBottom: spacing.xs }}>
+            {timeZoneOverride
+              ? `Home: ${timeZoneOverride} (reunion countdown and visit dates)`
+              : `Same as this device (${deviceTz})`}
+          </Text>
+          <Text style={{ fontSize: 13, color: theme.colors.textMuted }}>
+            Resolved for the app: {resolvedTz}
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            <Button label="Choose time zone" variant="secondary" onPress={() => setTzPickerOpen(true)} />
+            {timeZoneOverride ? (
+              <Button label="Use device time zone" variant="ghost" onPress={() => setTimeZoneOverride(null)} />
+            ) : null}
+          </View>
+        </View>
+
+        <TimeZonePickerModal
+          visible={tzPickerOpen}
+          onClose={() => setTzPickerOpen(false)}
+          onSelect={(ianaId) => setTimeZoneOverride(ianaId)}
+        />
+
         <View style={{ marginTop: spacing.md }}>
           <Button label="Save" onPress={onSave} />
         </View>
