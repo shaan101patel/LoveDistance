@@ -108,6 +108,7 @@ describe('composeHomeFeed', () => {
       partnerId,
       partnerFirstName: 'Riley',
       morningRitualDone: false,
+      currentStreakDays: 0,
     });
     expect(vm.daily.state).toBe('gated');
     expect(vm.daily.ctaLabel).toBe('Morning check-in');
@@ -133,10 +134,12 @@ describe('composeHomeFeed', () => {
       partnerId,
       partnerFirstName: 'Riley',
       morningRitualDone: true,
+      currentStreakDays: 4,
     });
     expect(vm.daily.state).toBe('completed');
     expect(vm.daily.ctaLabel).toBe('View thread');
     expect(vm.partnerActivity.heading).toContain('sample');
-    expect(vm.streak.disclaimer).toBeTruthy();
+    expect(vm.streak.disclaimer).toBeUndefined();
+    expect(vm.streak.currentStreakDays).toBe(4);
   });
 });

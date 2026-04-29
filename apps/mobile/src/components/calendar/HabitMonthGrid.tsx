@@ -16,9 +16,10 @@ type Props = {
   onDayPress: (ymd: string) => void;
   dayInteractive: (ymd: string) => boolean;
   dayMeta: (ymd: string) => { dayNum: number; a11yDate: string };
+  isReunionDay: (ymd: string) => boolean;
 };
 
-export function HabitMonthGrid({ cells, habit, ctx, onDayPress, dayInteractive, dayMeta }: Props) {
+export function HabitMonthGrid({ cells, habit, ctx, onDayPress, dayInteractive, dayMeta, isReunionDay }: Props) {
   const theme = useTheme();
   const rows: MonthGridCell[][] = [];
   for (let r = 0; r < 6; r += 1) {
@@ -50,6 +51,7 @@ export function HabitMonthGrid({ cells, habit, ctx, onDayPress, dayInteractive, 
                   state={state}
                   interactive={inRange && dayInteractive(cell.ymd)}
                   inRange={inRange}
+                  reunionHighlight={isReunionDay(cell.ymd)}
                   onPress={() => onDayPress(cell.ymd)}
                 />
               </View>

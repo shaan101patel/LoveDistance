@@ -7,8 +7,8 @@ import { supabaseServices } from '@/services/supabase/supabaseServices';
  * [`supabaseServices`](./supabase/supabaseServices.ts); otherwise in-memory [`mockServices`](./mock/mockServices.ts).
  * There is no automatic migration of mock data into Supabase—switch env and re-pair / re-enter content as needed.
  *
- * Scheduled reminder pushes are not implemented yet (Track A): inbox rows are event-driven only
- * (e.g. partner photo notifications from DB triggers). A future outbox + cron or push provider can add scheduling.
+ * Inbox rows come from DB triggers (photo, prompt, reactions, milestones) plus `run_notification_digest_job`
+ * (schedule via Supabase Edge `notification-digest` or pg_cron). Expo push dispatch is optional (`dispatch-expo-push`).
  */
 export function createServiceRegistry(): ServiceRegistry {
   const mode = process.env.EXPO_PUBLIC_API_MODE ?? 'mock';

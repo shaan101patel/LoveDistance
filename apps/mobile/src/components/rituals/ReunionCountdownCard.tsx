@@ -5,9 +5,8 @@ import { ReunionDateEditModal } from '@/components/rituals/ReunionDateEditModal'
 import { useUpdateReunionDates } from '@/features/hooks';
 import {
   effectiveReunionEndIso,
-  formatReunionInBothZones,
+  formatClockInTimeZone,
   formatYmdInTimeZone,
-  partnerRelativeDaypart,
   reunionCountdownParts,
   reunionDateLabelInZone,
   reunionVisitPhase,
@@ -24,10 +23,6 @@ type Props = {
   homeTimeZone: string;
   partnerTimeZone: string;
 };
-
-function shortTzLabel(tz: string): string {
-  return tz.replace(/_/g, ' ');
-}
 
 function rangeCaption(startIso: string, endIso: string | undefined, homeTz: string): string {
   const endEffective = effectiveReunionEndIso(startIso, endIso, homeTz);
@@ -108,9 +103,8 @@ export function ReunionCountdownCard({
 
   const phase = reunionVisitPhase(reunionIso, reunionEndIso, now, homeTimeZone);
   const parts = reunionCountdownParts(reunionIso, now);
-  const dual = formatReunionInBothZones(reunionIso, homeTimeZone, partnerTimeZone);
-  const daypart = partnerRelativeDaypart(now, partnerTimeZone);
   const endEffectiveIso = effectiveReunionEndIso(reunionIso, reunionEndIso, homeTimeZone);
+  const partnerNowCaption = `For ${partnerFirstName}, it's ${formatClockInTimeZone(now, partnerTimeZone)}`;
   const isLastVisitDay =
     phase === 'together' &&
     formatYmdInTimeZone(now, homeTimeZone) === ymdInZoneFromIso(endEffectiveIso, homeTimeZone);
@@ -147,28 +141,17 @@ export function ReunionCountdownCard({
                 ? 'Last day of your visit window — soak it in.'
                 : `${daysLeftInVisit} day${daysLeftInVisit === 1 ? '' : 's'} left in your visit window.`}
             </Text>
-            <Text style={{ ...typeBase.bodySm, color: theme.colors.textSecondary }}>
-              For {partnerFirstName}, it is {daypart} ({shortTzLabel(partnerTimeZone)}).
-            </Text>
           </>
         ) : (
           <>
             <Text style={{ ...typeBase.h2, color: theme.colors.textPrimary }}>
               {parts.days}d {parts.hours}h to go
             </Text>
-            <Text style={{ ...typeBase.bodySm, color: theme.colors.textSecondary }}>
-              For {partnerFirstName}, it is {daypart} ({shortTzLabel(partnerTimeZone)}).
-            </Text>
           </>
         )}
-        <View style={{ marginTop: spacing.xs, gap: 2 }}>
-          <Text style={{ ...typeBase.caption, color: theme.colors.textSecondary }}>{dual.meLine}</Text>
-          <Text style={{ ...typeBase.caption, color: theme.colors.textSecondary }}>{dual.partnerLine}</Text>
-          <Text style={{ ...typeBase.caption, color: theme.colors.textMuted }}>
-            Visit through {reunionDateLabelInZone(endEffectiveIso, homeTimeZone)} (your time,{' '}
-            {shortTzLabel(homeTimeZone)})
-          </Text>
-        </View>
+        <Text style={{ ...typeBase.caption, color: theme.colors.textSecondary, marginTop: spacing.xs }}>
+          {partnerNowCaption}
+        </Text>
       </View>
       <ReunionDateEditModal
         visible={editorOpen}

@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 
 import { LoadingState } from '@/components/status';
 import { registerNotificationResponseHandler } from '@/features/notifications/notificationsClient';
+import { useSyncExpoPushTokenWithBackend } from '@/features/notifications/useSyncExpoPushTokenWithBackend';
 import { useOnboardingStore } from '@/features/session/onboardingStore';
 import { useBootstrapSession } from '@/features/session/useBootstrapSession';
 import { useSessionStore } from '@/features/session/sessionStore';
@@ -37,6 +38,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   useBootstrapSession();
+  useSyncExpoPushTokenWithBackend();
   const services = useServices();
   const isHydrated = useSessionStore((state) => state.isHydrated);
   const isSignedIn = useSessionStore((state) => state.isSignedIn);

@@ -152,7 +152,7 @@ export const initialPresencePosts: PresencePost[] = [
 export const initialHabits: Habit[] = [
   {
     id: 'habit-ours-both',
-    title: 'Morning wake-up check-in (both do it)',
+    title: 'Morning check-in',
     type: 'ours',
     completionPolicy: 'both_required',
     goal: { kind: 'weekly_completions', targetCount: 5 },

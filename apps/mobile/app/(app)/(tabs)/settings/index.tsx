@@ -108,6 +108,21 @@ export default function SettingsHubScreen() {
           />
         </View>
       </SectionCard>
+
+      <SectionCard>
+        <View style={{ gap: spacing.md }}>
+          <SettingsLinkRow
+            description="Bugs, ideas, and what we should build next"
+            label="Send feedback"
+            onPress={() => router.push(`${base}/feedback`)}
+          />
+          <SettingsLinkRow
+            description="Contact us to remove your account and all stored data"
+            label="Delete account"
+            onPress={() => router.push(`${base}/delete-account`)}
+          />
+        </View>
+      </SectionCard>
     </SectionScaffold>
   );
 }

@@ -5,7 +5,7 @@ import { useLayoutEffect, useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { TabHeaderTitle } from '@/components/navigation/TabHeaderTitle';
-import { Card } from '@/components/primitives';
+import { Avatar, Card } from '@/components/primitives';
 import {
   DailyPromptCard,
   LatestSharedPhotoBlock,
@@ -16,7 +16,14 @@ import {
 import { ReunionCountdownCard } from '@/components/rituals';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
-import { useCouple, useCurrentUserId, useHabits, usePresenceFeed, useTodayPrompt } from '@/features/hooks';
+import {
+  useCouple,
+  useCurrentUserId,
+  useHabits,
+  useHomeEngagementStreak,
+  usePresenceFeed,
+  useTodayPrompt,
+} from '@/features/hooks';
 import { composeHomeFeed } from '@/features/home/homeFeedComposer';
 import { MOCK_PARTNER_TIME_ZONE } from '@/features/rituals/ritualTimePresentation';
 import { isMorningRitualCompleteForUser } from '@/features/rituals/morningRitual';
@@ -77,8 +84,15 @@ export default function HomeScreen() {
   const homeTimeZone = resolveUserTimeZone(session?.user.timeZone);
   const partnerTimeZone = partner?.timeZone?.trim() || MOCK_PARTNER_TIME_ZONE;
 
+  const streakQuery = useHomeEngagementStreak(thread?.date, homeTimeZone);
+  const streakDaysForFeed = streakQuery.isSuccess
+    ? streakQuery.data
+    : streakQuery.isError
+      ? 0
+      : undefined;
+
   const homeFeed = useMemo(() => {
-    if (!couple || !thread || !meId) {
+    if (!couple || !thread || !meId || streakDaysForFeed === undefined) {
       return null;
     }
     return composeHomeFeed({
@@ -87,11 +101,14 @@ export default function HomeScreen() {
       partnerId: couple.partner.id,
       partnerFirstName: couple.partner.firstName,
       morningRitualDone,
+      currentStreakDays: streakDaysForFeed,
     });
-  }, [couple, thread, meId, morningRitualDone]);
+  }, [couple, thread, meId, morningRitualDone, streakDaysForFeed]);
 
+  const streakBlocking = Boolean(thread) && streakDaysForFeed === undefined;
   const showFeedSkeleton =
-    Boolean(partner) && (coupleLoading || sessionUserLoading || promptLoading || habitsLoading);
+    Boolean(partner) &&
+    (coupleLoading || sessionUserLoading || promptLoading || habitsLoading || streakBlocking);
 
   return (
     <SectionScaffold hideHero>
@@ -101,8 +118,27 @@ export default function HomeScreen() {
         </SectionCard>
       ) : partner ? (
         <View style={{ gap: spacing.md }}>
-          <View style={{ gap: spacing.xs }}>
-            <Text style={{ color: theme.colors.textPrimary, fontWeight: '700', fontSize: 18 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.sm,
+              marginTop: spacing.sm,
+            }}
+          >
+            <Avatar
+              name={partner.firstName}
+              size="sm"
+              source={partner.avatarUrl ? { uri: partner.avatarUrl } : undefined}
+            />
+            <Text
+              style={{
+                flex: 1,
+                color: theme.colors.textPrimary,
+                fontWeight: '700',
+                fontSize: 18,
+              }}
+            >
               Paired with {partner.firstName}
               {partner.displayName && partner.displayName !== partner.firstName
                 ? ` (${partner.displayName})`
@@ -164,6 +200,7 @@ export default function HomeScreen() {
                   onPress={() => {
                     devSimulatePartnerTodayAnswer();
                     void queryClient.invalidateQueries({ queryKey: ['prompt', 'today'] });
+                    void queryClient.invalidateQueries({ queryKey: ['prompt', 'streak'] });
                   }}
                   style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
                 >
@@ -175,6 +212,7 @@ export default function HomeScreen() {
                   onPress={() => {
                     devSimulatePartnerTodayReaction();
                     void queryClient.invalidateQueries({ queryKey: ['prompt', 'today'] });
+                    void queryClient.invalidateQueries({ queryKey: ['prompt', 'streak'] });
                   }}
                   style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
                 >

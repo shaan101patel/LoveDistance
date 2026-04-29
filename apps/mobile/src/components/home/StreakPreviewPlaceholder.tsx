@@ -12,6 +12,7 @@ type Props = {
 
 export function StreakPreviewPlaceholder({ model }: Props) {
   const theme = useTheme();
+  const isPreview = Boolean(model.disclaimer);
   const styles = useMemo(
     () =>
       StyleSheet.create({
@@ -25,14 +26,17 @@ export function StreakPreviewPlaceholder({ model }: Props) {
   );
 
   return (
-    <View accessibilityLabel="Streak preview placeholder" accessibilityRole="text">
+    <View
+      accessibilityLabel={isPreview ? 'Streak preview placeholder' : 'Engagement streak'}
+      accessibilityRole="text"
+    >
       <Card elevated={false}>
         <View style={styles.numberRow}>
           <Text style={styles.number}>{model.currentStreakDays}</Text>
-          <Text style={styles.suffix}>day streak (preview)</Text>
+          <Text style={styles.suffix}>{isPreview ? 'day streak (preview)' : 'day streak'}</Text>
         </View>
         <Text style={styles.copy}>{model.copyLine}</Text>
-        <Text style={styles.disclaimer}>{model.disclaimer}</Text>
+        {model.disclaimer ? <Text style={styles.disclaimer}>{model.disclaimer}</Text> : null}
       </Card>
     </View>
   );

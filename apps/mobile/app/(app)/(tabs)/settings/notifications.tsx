@@ -6,6 +6,7 @@ import { SettingsLinkRow, SettingsSubheading, SettingsToggleRow } from '@/compon
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useNotificationPreferences } from '@/features/hooks';
+import { usesConfiguredSupabase } from '@/services/apiMode';
 import type { NotificationPrefs } from '@/types/domain';
 import { spacing } from '@/theme/tokens';
 
@@ -23,32 +24,33 @@ const ROWS: { key: keyof NotificationPrefs; label: string; description: string }
   {
     key: 'reactions',
     label: 'Reactions',
-    description: 'Hearts and replies on prompts and threads (mock)',
+    description: 'Hearts and replies on prompts and threads',
   },
   {
     key: 'habitReminder',
     label: 'Habit reminders',
-    description: 'Nudges for shared check-ins and rituals (mock)',
+    description: 'Nudges for shared check-ins and rituals',
   },
   {
     key: 'milestones',
     label: 'Milestones & streaks',
-    description: 'Streak wins and small wins on the timeline (mock)',
+    description: 'Streak wins and small wins on the timeline',
   },
   {
     key: 'anniversaries',
     label: 'Anniversaries',
-    description: 'Relationship dates and memory milestones (mock)',
+    description: 'Relationship dates and memory milestones',
   },
   {
     key: 'countdownUpdates',
     label: 'Countdown updates',
-    description: 'Reunion countdown checkpoints (mock)',
+    description: 'Reunion countdown checkpoints',
   },
 ];
 
 export default function SettingsNotificationsScreen() {
   const router = useRouter();
+  const live = usesConfiguredSupabase();
   const { query, mutation } = useNotificationPreferences();
   const prefs = query.data;
 
@@ -70,7 +72,11 @@ export default function SettingsNotificationsScreen() {
   return (
     <SectionScaffold
       kicker="Alerts"
-      lead="Toggles are stored in the mock service only. A future build maps them to push topics and per-device prefs."
+      lead={
+        live
+          ? 'These preferences control partner alerts in your inbox and scheduled reminders. When you allow notifications, this device registers an Expo push token with your account for optional server-side push.'
+          : 'Toggles are stored locally in mock mode. With Supabase, they sync to your account and control real partner alerts.'
+      }
       title="Notifications"
     >
       {query.isLoading ? <Body>Loading…</Body> : null}
@@ -80,7 +86,11 @@ export default function SettingsNotificationsScreen() {
           <SectionCard>
             <SettingsLinkRow
               label="Open notification center"
-              description="Preview inbox grouped by category (mock events only)"
+              description={
+                live
+                  ? 'Inbox grouped by category—updates when your partner acts or scheduled jobs run.'
+                  : 'Preview inbox grouped by category (mock events only).'
+              }
               onPress={() => router.push('/(app)/notifications' as Href)}
             />
           </SectionCard>

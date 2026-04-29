@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isMorningRitualCompleteForUser, WAKE_HABIT_ID } from '@/features/rituals/morningRitual';
+import { isMorningRitualCompleteForUser } from '@/features/rituals/morningRitual';
 import type { Habit } from '@/types/domain';
 
 const me = 'u-me';
@@ -8,8 +8,8 @@ const d = '2026-01-15';
 
 function wakeHabit(completions: Record<string, string[]>): Habit {
   return {
-    id: WAKE_HABIT_ID,
-    title: 'Morning',
+    id: 'any-id',
+    title: 'Morning check-in',
     type: 'ours',
     completionPolicy: 'both_required',
     completionsByDate: completions,

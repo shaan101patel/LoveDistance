@@ -228,12 +228,31 @@ export type Database = {
           },
         ];
       };
+      notification_digest_keys: {
+        Row: {
+          created_at: string;
+          dedupe_key: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          dedupe_key: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          dedupe_key?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       notifications: {
         Row: {
           category: string;
           created_at: string;
           href: string | null;
           id: string;
+          push_dispatched_at: string | null;
           read: boolean;
           summary: string;
           title: string;
@@ -244,6 +263,7 @@ export type Database = {
           created_at?: string;
           href?: string | null;
           id?: string;
+          push_dispatched_at?: string | null;
           read?: boolean;
           summary?: string;
           title: string;
@@ -254,6 +274,7 @@ export type Database = {
           created_at?: string;
           href?: string | null;
           id?: string;
+          push_dispatched_at?: string | null;
           read?: boolean;
           summary?: string;
           title?: string;
@@ -576,6 +597,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      user_push_tokens: {
+        Row: {
+          expo_push_token: string;
+          id: string;
+          platform: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          expo_push_token: string;
+          id?: string;
+          platform?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          expo_push_token?: string;
+          id?: string;
+          platform?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       user_notification_prefs: {
         Row: {
           anniversaries: boolean;
@@ -619,6 +664,7 @@ export type Database = {
     Functions: {
       create_invite: { Args: { expires_in?: string }; Returns: Json };
       redeem_plus_promo: { Args: { p_code: string }; Returns: Json };
+      run_notification_digest_job: { Args: Record<PropertyKey, never>; Returns: undefined };
       is_member_of_couple: {
         Args: { p_couple_id: string; p_user_id: string };
         Returns: boolean;

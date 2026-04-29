@@ -17,7 +17,8 @@ export type PartnerActivityRow = {
 export type StreakPreviewModel = {
   currentStreakDays: number;
   copyLine: string;
-  disclaimer: string;
+  /** When set, the card shows preview styling and a footnote. */
+  disclaimer?: string;
 };
 
 export type HomeFeedViewModel = {
@@ -152,11 +153,11 @@ function buildPlaceholderActivity(partnerFirstName: string): HomeFeedViewModel['
   };
 }
 
-function buildStreakPreview(): StreakPreviewModel {
+function buildLiveStreakCard(partnerFirstName: string, currentStreakDays: number): StreakPreviewModel {
   return {
-    currentStreakDays: 7,
-    copyLine: 'When you both answer the daily prompt, your streak can grow. Preview data only.',
-    disclaimer: 'Streaks will sync for real when your backend is connected.',
+    currentStreakDays,
+    copyLine: `You and ${partnerFirstName} add a day when you both finish the prompt, you both share a photo that day, or you are together on a reunion (those days count automatically).`,
+    disclaimer: undefined,
   };
 }
 
@@ -167,18 +168,19 @@ type ComposeInput = {
   partnerFirstName: string;
   /** User has completed their side of the morning wake habit for today. */
   morningRitualDone: boolean;
+  /** From `getHomeEngagementStreak` / mock equivalent. */
+  currentStreakDays: number;
 };
 
 /**
  * Composes a view model for the Home feed from a prompt thread and identity.
- * Replace placeholder activity/streak from this result when you wire real APIs.
  */
 export function composeHomeFeed(input: ComposeInput): HomeFeedViewModel {
-  const { thread, meId, partnerId, partnerFirstName, morningRitualDone } = input;
+  const { thread, meId, partnerId, partnerFirstName, morningRitualDone, currentStreakDays } = input;
   const state = deriveHomeDailyPromptState(thread, meId, partnerId, morningRitualDone);
   return {
     daily: buildDailyCopy(state, thread.question, thread.promptId, partnerFirstName),
     partnerActivity: buildPlaceholderActivity(partnerFirstName),
-    streak: buildStreakPreview(),
+    streak: buildLiveStreakCard(partnerFirstName, currentStreakDays),
   };
 }

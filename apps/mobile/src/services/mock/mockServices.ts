@@ -25,6 +25,13 @@ import {
   resetThreadActivityToInitial,
   upsertPromptPhotoFusionMemory,
 } from '@/services/mock/mockData';
+import {
+  addUtcDays,
+  computeEngagementStreakDays,
+  graceUtcYmdsInInclusiveWindow,
+  mergeSatisfiedUtcYmds,
+  mutualPresenceUtcYmds,
+} from '@/features/home/homeEngagementStreak';
 import { getPathFromRef, parseDeepLink } from '@/lib/deepLinking/deepLinkService';
 import { addLocalDays, formatYmdLocal } from '@/lib/calendarDates';
 import {
@@ -299,6 +306,37 @@ export const mockServices: ServiceRegistry = {
       }
       return withLatency({ ...mockDb.prompt });
     },
+    async getHomeEngagementStreak(anchorPromptDateYmd, homeTimeZone) {
+      if (!mockDb.couple) {
+        throw new Error('Complete pairing first to use this feature.');
+      }
+      const minYmd = addUtcDays(anchorPromptDateYmd, -400);
+      const meId = mockDb.couple.meId;
+      const partnerId = mockDb.couple.partner.id;
+      const revealedPromptDates =
+        mockDb.prompt.isRevealed && mockDb.prompt.date >= minYmd && mockDb.prompt.date <= anchorPromptDateYmd
+          ? [mockDb.prompt.date]
+          : [];
+      const mutualPresenceDates = mutualPresenceUtcYmds(
+        mockDb.posts.map((p) => ({ authorId: p.authorId, createdAt: p.createdAt })),
+        meId,
+        partnerId,
+      );
+      const graceUtcYmds = graceUtcYmdsInInclusiveWindow(
+        minYmd,
+        anchorPromptDateYmd,
+        mockDb.couple.reunionDate,
+        mockDb.couple.reunionEndDate,
+        homeTimeZone,
+      );
+      const satisfied = mergeSatisfiedUtcYmds({
+        revealedPromptDates,
+        mutualPresenceDates,
+        graceUtcYmds,
+      });
+      const n = computeEngagementStreakDays(anchorPromptDateYmd, satisfied);
+      return withLatency(n);
+    },
   },
   threadInteraction: {
     async getThreadActivity(promptId: string) {
@@ -522,6 +560,11 @@ export const mockServices: ServiceRegistry = {
         (row): NotificationInboxItem => ({ ...row, read: true }),
       );
       return withLatency(mockDb.notificationInbox.map((x) => ({ ...x })));
+    },
+  },
+  pushTokens: {
+    async upsertExpoPushToken() {
+      return withLatency(undefined);
     },
   },
   userSettings: {

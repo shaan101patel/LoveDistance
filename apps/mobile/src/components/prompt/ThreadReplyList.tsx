@@ -1,12 +1,21 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { ThreadReactionBar } from '@/components/prompt/ThreadReactionBar';
 import type { ReplyTreeNode } from '@/features/prompts/threadRepliesLayout';
+import { useDoubleTap } from '@/lib/useDoubleTap';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
-const REPLY_QUICK = ['👍', '❤️', '✨'] as const;
+const HEART_EMOJI = '❤️';
+
+function formatReplyTime(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
 
 type RowProps = {
   node: ReplyTreeNode;
@@ -30,16 +39,31 @@ function ThreadReplyRow({
   const theme = useTheme();
   const isMe = node.reply.authorId === meId;
   const label = isMe ? 'You' : partnerName;
+  const handleDoubleTap = useDoubleTap(() => {
+    onReact(node.reply.id, HEART_EMOJI);
+  });
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        wrap: { marginLeft: Math.min(depth, 4) * 12, borderLeftWidth: depth > 0 ? 2 : 0, borderLeftColor: theme.colors.border, paddingLeft: depth > 0 ? spacing.md : 0, paddingVertical: spacing.sm, gap: spacing.xs },
-        name: { ...theme.type.caption, color: theme.colors.textMuted, fontWeight: '600' as const },
+        wrap: {
+          marginLeft: Math.min(depth, 4) * 12,
+          borderLeftWidth: depth > 0 ? 2 : 0,
+          borderLeftColor: theme.colors.border,
+          paddingLeft: depth > 0 ? spacing.md : 0,
+          paddingVertical: spacing.sm,
+          gap: spacing.xs,
+        },
+        headerRow: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: spacing.sm,
+        },
+        name: { ...theme.type.caption, color: theme.colors.textMuted, fontWeight: '600' as const, flexShrink: 1 },
+        time: { ...theme.type.caption, color: theme.colors.textMuted, flexShrink: 0 },
         body: { ...theme.type.body, color: theme.colors.textPrimary },
-        meta: { ...theme.type.caption, color: theme.colors.textMuted },
         replyLink: { alignSelf: 'flex-start' as const, marginTop: 4 },
         replyText: { ...theme.type.caption, color: theme.colors.primary, fontWeight: '600' as const },
-        react: { marginTop: spacing.xs },
       }),
     [depth, theme],
   );
@@ -47,16 +71,20 @@ function ThreadReplyRow({
   return (
     <View>
       <View style={styles.wrap}>
-        <Text style={styles.name}>{label}</Text>
-        <Text style={styles.body}>{node.reply.body}</Text>
-        <Text style={styles.meta} accessibilityLabel="Time sent">
-          {new Date(node.reply.createdAt).toLocaleString(undefined, {
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-          })}
-        </Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.name}>{label}</Text>
+          <Text style={styles.time} accessibilityLabel="Time sent">
+            {formatReplyTime(node.reply.createdAt)}
+          </Text>
+        </View>
+        <Pressable
+          accessibilityHint="Double tap to send a heart"
+          accessibilityRole="button"
+          disabled={replyReactionPending}
+          onPress={handleDoubleTap}
+        >
+          <Text style={styles.body}>{node.reply.body}</Text>
+        </Pressable>
         <Pressable
           accessibilityLabel="Reply to this message"
           onPress={() => onReply(node.reply.id)}
@@ -64,16 +92,6 @@ function ThreadReplyRow({
         >
           <Text style={styles.replyText}>Reply</Text>
         </Pressable>
-        <View style={styles.react}>
-          <ThreadReactionBar
-            isPending={replyReactionPending}
-            reactions={node.reply.reactions}
-            showTitle={false}
-            onPickEmoji={(emoji) => onReact(node.reply.id, emoji)}
-            quickEmojis={REPLY_QUICK}
-            title="React"
-          />
-        </View>
       </View>
       {node.children.map((ch) => (
         <ThreadReplyRow

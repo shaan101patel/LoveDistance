@@ -132,6 +132,30 @@ export function effectiveReunionEndIso(
   return reunionEndOfDayIsoFromYmdInZone(ymd, timeZone);
 }
 
+/**
+ * True if the device-local calendar day `ymd` (habit grid / `parseYmdLocal`) overlaps the reunion
+ * visit window [start, effectiveEnd], same bounds as {@link reunionVisitPhase}.
+ */
+export function localYmdIntersectsReunionVisit(
+  ymd: string,
+  reunionStartIso: string | null | undefined,
+  reunionEndIso: string | null | undefined,
+  homeTimeZone: string,
+): boolean {
+  if (!reunionStartIso?.trim()) return false;
+  const visitStart = new Date(reunionStartIso).getTime();
+  const visitEnd = new Date(
+    effectiveReunionEndIso(reunionStartIso, reunionEndIso ?? undefined, homeTimeZone),
+  ).getTime();
+  const day0 = parseYmdLocal(ymd);
+  if (!day0) return false;
+  const dayStart = day0.getTime();
+  const nextLocalMidnight = new Date(day0);
+  nextLocalMidnight.setDate(nextLocalMidnight.getDate() + 1);
+  const dayEnd = nextLocalMidnight.getTime() - 1;
+  return dayStart <= visitEnd && visitStart <= dayEnd;
+}
+
 export type ReunionVisitPhase = 'upcoming' | 'together' | 'ended';
 
 export function reunionVisitPhase(
@@ -163,14 +187,3 @@ export function reunionDateLabelInZone(iso: string, timeZone: string): string {
   return formatInTimeZone(new Date(iso), timeZone, 'EEE, MMM d, yyyy');
 }
 
-export function formatReunionInBothZones(
-  reunionIso: string,
-  meTimeZone: string,
-  partnerTimeZone: string,
-): { meLine: string; partnerLine: string } {
-  const d = new Date(reunionIso);
-  return {
-    meLine: `You: ${formatClockInTimeZone(d, meTimeZone)}`,
-    partnerLine: `Them: ${formatClockInTimeZone(d, partnerTimeZone)}`,
-  };
-}

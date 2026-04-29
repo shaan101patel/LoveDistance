@@ -17,9 +17,10 @@ type Props = {
   onDayPress: (ymd: string) => void;
   dayInteractive: (ymd: string) => boolean;
   dayMeta: (ymd: string) => { dayNum: number; a11yDate: string };
+  isReunionDay: (ymd: string) => boolean;
 };
 
-export function HabitWeekStrip({ ymds, habit, ctx, onDayPress, dayInteractive, dayMeta }: Props) {
+export function HabitWeekStrip({ ymds, habit, ctx, onDayPress, dayInteractive, dayMeta, isReunionDay }: Props) {
   const theme = useTheme();
 
   return (
@@ -51,6 +52,7 @@ export function HabitWeekStrip({ ymds, habit, ctx, onDayPress, dayInteractive, d
                 accessibilityDate={a11yDate}
                 state={state}
                 interactive={dayInteractive(ymd)}
+                reunionHighlight={isReunionDay(ymd)}
                 onPress={() => onDayPress(ymd)}
               />
             </View>

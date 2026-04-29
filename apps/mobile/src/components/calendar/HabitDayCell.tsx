@@ -17,6 +17,8 @@ type Props = {
   numberOnly?: boolean;
   /** Spoken / override for a11y when `numberOnly` (e.g. "January 15, 2026"). */
   accessibilityDate?: string;
+  /** Reunion visit window includes this device-local calendar day. */
+  reunionHighlight?: boolean;
 };
 
 function stateBackground(
@@ -37,16 +39,18 @@ function a11yLabel(
   dayNumber: number,
   state: HabitDayDisplayState,
   numberOnly: boolean,
-  accessibilityDate?: string,
+  accessibilityDate: string | undefined,
+  reunionHighlight: boolean,
 ): { label: string; checked: boolean } {
   const datePart = accessibilityDate ?? (numberOnly ? String(dayNumber) : `${dayLabel} ${dayNumber}`);
+  const reunionSuffix = reunionHighlight ? ', reunion visit' : '';
   if (state === 'satisfied') {
-    return { label: `${datePart}, done`, checked: true };
+    return { label: `${datePart}, done${reunionSuffix}`, checked: true };
   }
   if (state === 'partial') {
-    return { label: `${datePart}, waiting for partner`, checked: false };
+    return { label: `${datePart}, waiting for partner${reunionSuffix}`, checked: false };
   }
-  return { label: `${datePart}, not done`, checked: false };
+  return { label: `${datePart}, not done${reunionSuffix}`, checked: false };
 }
 
 export function HabitDayCell({
@@ -58,17 +62,20 @@ export function HabitDayCell({
   inRange = true,
   numberOnly = false,
   accessibilityDate,
+  reunionHighlight = false,
 }: Props) {
   const theme = useTheme();
   const { bg, border } = stateBackground(state, theme);
-  const a11y = a11yLabel(dayLabel, dayNumber, state, numberOnly, accessibilityDate);
+  const a11y = a11yLabel(dayLabel, dayNumber, state, numberOnly, accessibilityDate, reunionHighlight);
+  const borderColor = reunionHighlight ? theme.colors.success : border;
+  const borderWidth = reunionHighlight ? 2 : 1;
 
   const size: ViewStyle = {
     minWidth: 40,
     minHeight: 44,
     borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: border,
+    borderWidth,
+    borderColor,
     backgroundColor: bg,
     alignItems: 'center',
     justifyContent: 'center',

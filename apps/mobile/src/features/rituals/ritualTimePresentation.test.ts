@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  MOCK_ME_TIME_ZONE,
   MOCK_PARTNER_TIME_ZONE,
   calendarDateForReunionPicker,
   deviceTimeZone,
   effectiveReunionEndIso,
-  formatReunionInBothZones,
   localCalendarDateFromReunionIso,
+  localYmdIntersectsReunionVisit,
   partnerRelativeDaypart,
   reunionCountdownParts,
   reunionEndOfLocalDayIso,
@@ -18,7 +17,6 @@ import {
   visitCalendarDaysRemaining,
   ymdInZoneFromIso,
 } from '@/features/rituals/ritualTimePresentation';
-
 describe('reunionCountdownParts', () => {
   const now = new Date('2026-04-01T12:00:00.000Z');
 
@@ -93,6 +91,41 @@ describe('visitCalendarDaysRemaining', () => {
   });
 });
 
+describe('localYmdIntersectsReunionVisit', () => {
+  const utc = 'UTC';
+
+  it('returns false when reunion start is missing or blank', () => {
+    expect(localYmdIntersectsReunionVisit('2026-06-10', undefined, undefined, utc)).toBe(false);
+    expect(localYmdIntersectsReunionVisit('2026-06-10', '', undefined, utc)).toBe(false);
+  });
+
+  it('is true for a wide window on a mid-range local day', () => {
+    const start = '2020-01-01T12:00:00.000Z';
+    const end = reunionEndOfDayIsoFromYmdInZone('2030-12-31', utc);
+    expect(localYmdIntersectsReunionVisit('2025-06-15', start, end, utc)).toBe(true);
+  });
+
+  it('is false for a local day before the visit', () => {
+    const start = reunionIsoFromYmdInZone('2026-06-10', utc);
+    const end = reunionEndOfDayIsoFromYmdInZone('2026-06-12', utc);
+    expect(localYmdIntersectsReunionVisit('1999-01-01', start, end, utc)).toBe(false);
+  });
+
+  it('single-day default end: intersects the home-zone calendar day of the start', () => {
+    const start = reunionIsoFromYmdInZone('2026-06-10', utc);
+    const ymd = ymdInZoneFromIso(start, utc);
+    expect(localYmdIntersectsReunionVisit(ymd, start, undefined, utc)).toBe(true);
+  });
+
+  it('boundary: last instant of visit still intersects that calendar day', () => {
+    const start = reunionIsoFromYmdInZone('2026-06-10', utc);
+    const end = reunionEndOfDayIsoFromYmdInZone('2026-06-12', utc);
+    const endYmd = ymdInZoneFromIso(end, utc);
+    expect(localYmdIntersectsReunionVisit(endYmd, start, end, utc)).toBe(true);
+    expect(localYmdIntersectsReunionVisit('2028-01-01', start, end, utc)).toBe(false);
+  });
+});
+
 describe('reunionVisitPhase', () => {
   const start = reunionIsoFromLocalDate(new Date(2026, 5, 10));
   const end = reunionEndOfLocalDayIso(new Date(2026, 5, 12));
@@ -108,16 +141,3 @@ describe('reunionVisitPhase', () => {
   });
 });
 
-describe('formatReunionInBothZones', () => {
-  it('returns two non-empty lines', () => {
-    const lines = formatReunionInBothZones(
-      '2026-12-25T18:00:00.000Z',
-      MOCK_ME_TIME_ZONE,
-      MOCK_PARTNER_TIME_ZONE,
-    );
-    expect(lines.meLine).toContain('You:');
-    expect(lines.partnerLine).toContain('Them:');
-    expect(lines.meLine.length).toBeGreaterThan(6);
-    expect(lines.partnerLine.length).toBeGreaterThan(6);
-  });
-});

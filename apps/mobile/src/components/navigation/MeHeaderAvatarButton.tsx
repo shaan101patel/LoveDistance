@@ -5,7 +5,12 @@ import { Pressable } from 'react-native';
 import { Avatar } from '@/components/primitives';
 import { useServices } from '@/services/ServiceContext';
 
-export function MeHeaderAvatarButton() {
+type Props = {
+  /** Right margin from the avatar control; default matches standalone `headerRight`. */
+  trailingGutter?: number;
+};
+
+export function MeHeaderAvatarButton({ trailingGutter = 4 }: Props) {
   const services = useServices();
   const { data: session } = useQuery({
     queryKey: ['auth', 'session'],
@@ -27,7 +32,7 @@ export function MeHeaderAvatarButton() {
       accessibilityLabel="Account and profile"
       hitSlop={8}
       onPress={goProfile}
-      style={{ marginRight: 4 }}
+      style={{ marginRight: trailingGutter }}
     >
       <Avatar name={u?.firstName} size="sm" source={source} />
     </Pressable>

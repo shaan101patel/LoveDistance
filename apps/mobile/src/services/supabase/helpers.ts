@@ -16,7 +16,7 @@ export function requireClient() {
   return supabaseClient;
 }
 
-function publicAvatarUrl(path: string | null | undefined): string | undefined {
+export function publicAvatarUrl(path: string | null | undefined): string | undefined {
   if (!path || !isSupabaseConfigured || !supabaseClient) {
     return undefined;
   }

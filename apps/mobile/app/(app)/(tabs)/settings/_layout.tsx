@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 
-import { MeHeaderAvatarButton } from '@/components/navigation/MeHeaderAvatarButton';
+import { MeHeaderRightCluster } from '@/components/navigation/MeHeaderRightCluster';
 import { useTheme } from '@/theme/ThemeProvider';
 
 export default function SettingsStackLayout() {
@@ -13,7 +13,7 @@ export default function SettingsStackLayout() {
         headerTitleStyle: { fontWeight: '600' },
         headerShadowVisible: true,
         contentStyle: { backgroundColor: theme.colors.bg },
-        headerRight: () => <MeHeaderAvatarButton />,
+        headerRight: () => <MeHeaderRightCluster />,
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Settings' }} />
@@ -22,6 +22,8 @@ export default function SettingsStackLayout() {
       <Stack.Screen name="privacy" options={{ title: 'Privacy' }} />
       <Stack.Screen name="security" options={{ title: 'App lock' }} />
       <Stack.Screen name="relationship" options={{ title: 'Relationship' }} />
+      <Stack.Screen name="delete-account" options={{ title: 'Delete account' }} />
+      <Stack.Screen name="feedback" options={{ title: 'Send feedback' }} />
     </Stack>
   );
 }

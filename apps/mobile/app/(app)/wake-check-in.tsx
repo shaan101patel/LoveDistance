@@ -1,12 +1,12 @@
 import { useRouter, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/primitives/Button';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useCouple, useCurrentUserId, useHabits, useToggleHabit } from '@/features/hooks';
-import { isMorningRitualCompleteForUser, WAKE_HABIT_ID } from '@/features/rituals/morningRitual';
+import { findMorningRitualHabit, isMorningRitualCompleteForUser } from '@/features/rituals/morningRitual';
 import { formatYmdLocal, toMonthKey } from '@/lib/calendarDates';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing, typeBase } from '@/theme/tokens';
@@ -25,6 +25,7 @@ export default function WakeCheckInScreen() {
   const [selectedSleep, setSelectedSleep] = useState<string | null>(null);
 
   const alreadyDone = Boolean(meId && isMorningRitualCompleteForUser(habits, meId, todayYmd));
+  const morningHabit = findMorningRitualHabit(habits);
   const partner = couple?.partner;
 
   const chipStyles = useMemo(
@@ -117,20 +118,36 @@ export default function WakeCheckInScreen() {
         <Button
           label="Save and continue"
           onPress={() => {
+            if (!morningHabit) return;
             toggle.mutate(
-              { habitId: WAKE_HABIT_ID, date: todayYmd },
-              { onSuccess: () => router.back() },
+              { habitId: morningHabit.id, date: todayYmd },
+              {
+                onSuccess: () => router.back(),
+                onError: (err) =>
+                  Alert.alert(
+                    "Couldn't save your check-in",
+                    err instanceof Error ? err.message : 'Something went wrong.',
+                  ),
+              },
             );
           }}
-          disabled={toggle.isPending}
+          disabled={toggle.isPending || !morningHabit}
         />
-        <Text
-          onPress={() => router.push('/(app)/habit/habit-ours-both' as Href)}
-          style={{ ...typeBase.bodySm, color: theme.colors.primary, fontWeight: '600' }}
-          accessibilityRole="link"
-        >
-          See morning habit in Calendar
-        </Text>
+        {!morningHabit ? (
+          <Text style={{ ...typeBase.bodySm, color: theme.colors.textMuted }}>
+            We couldn’t find your Morning check-in habit yet. Try Calendar — or pull to refresh Home — then
+            try again.
+          </Text>
+        ) : null}
+        {morningHabit ? (
+          <Text
+            onPress={() => router.push(`/(app)/habit/${morningHabit.id}` as Href)}
+            style={{ ...typeBase.bodySm, color: theme.colors.primary, fontWeight: '600' }}
+            accessibilityRole="link"
+          >
+            See morning habit in Calendar
+          </Text>
+        ) : null}
       </View>
     </SectionScaffold>
   );

@@ -1,4 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Link } from 'expo-router';
@@ -14,7 +15,10 @@ import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { isUserAllowedToToggleHabit, type HabitContextIds } from '@/features/habits';
 import { useCouple, useCurrentUserId, useHabits, useToggleHabit } from '@/features/hooks';
+import { localYmdIntersectsReunionVisit } from '@/features/rituals/ritualTimePresentation';
 import { addLocalDays, formatYmdLocal, getMonthGridCells, getWeekYmdsForDay, toMonthKey } from '@/lib/calendarDates';
+import { resolveUserTimeZone } from '@/lib/userTimeZone';
+import { useServices } from '@/services/ServiceContext';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing, typeBase } from '@/theme/tokens';
 
@@ -35,9 +39,21 @@ export default function CalendarTabScreen() {
   const [mode, setMode] = useState<'week' | 'month'>('month');
   const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
 
+  const services = useServices();
   const { data: couple } = useCouple();
+  const { data: session } = useQuery({
+    queryKey: ['auth', 'session'],
+    queryFn: () => services.auth.getSession(),
+  });
   const { meId, isSessionLoading: sessionLoading } = useCurrentUserId();
   const partnerId = couple?.partner.id;
+  const homeTimeZone = resolveUserTimeZone(session?.user.timeZone);
+
+  const isReunionDay = useCallback(
+    (ymd: string) =>
+      localYmdIntersectsReunionVisit(ymd, couple?.reunionDate, couple?.reunionEndDate, homeTimeZone),
+    [couple?.reunionDate, couple?.reunionEndDate, homeTimeZone],
+  );
 
   const monthKey = toMonthKey(visibleMonth);
   const { data: habits, isLoading } = useHabits(monthKey);
@@ -272,6 +288,7 @@ export default function CalendarTabScreen() {
                     onDayPress={onDayPress}
                     dayInteractive={dayInteractive}
                     dayMeta={dayMeta}
+                    isReunionDay={isReunionDay}
                   />
                 ) : (
                   <HabitMonthGrid
@@ -281,6 +298,7 @@ export default function CalendarTabScreen() {
                     onDayPress={onDayPress}
                     dayInteractive={dayInteractive}
                     dayMeta={dayMeta}
+                    isReunionDay={isReunionDay}
                   />
                 )}
 

@@ -11,12 +11,14 @@ import { radius, spacing } from '@/theme/tokens';
 type Props = {
   row: PartnerRowModel;
   title: string;
+  onDoubleTapHeart?: () => void;
+  doubleTapHeartDisabled?: boolean;
 };
 
 /**
  * Renders the partner’s side of the thread. When obscured, the real answer is not shown; native uses blur, web uses a frosted overlay.
  */
-export function PartnerAnswerPanel({ row, title }: Props) {
+export function PartnerAnswerPanel({ row, title, onDoubleTapHeart, doubleTapHeartDisabled }: Props) {
   const theme = useTheme();
   const styles = useMemo(
     () =>
@@ -90,10 +92,12 @@ export function PartnerAnswerPanel({ row, title }: Props) {
   return (
     <View>
       <PromptAnswerMoment
+        doubleTapHeartDisabled={doubleTapHeartDisabled}
         heading={title}
         imageUri={row.imageUri}
         submittedAt={row.submittedAt}
         text={row.text}
+        onDoubleTapHeart={onDoubleTapHeart}
       />
     </View>
   );
@@ -101,17 +105,30 @@ export function PartnerAnswerPanel({ row, title }: Props) {
 
 type AnswerCardProps = { heading: string; text: string; submittedAt: string };
 
-type UnlockedCardProps = AnswerCardProps & { imageUri?: string };
+type UnlockedCardProps = AnswerCardProps & {
+  imageUri?: string;
+  onDoubleTapHeart?: () => void;
+  doubleTapHeartDisabled?: boolean;
+};
 
 /** Full answer display once the thread is unlocked. */
-export function UnlockedAnswerCard({ heading, text, submittedAt, imageUri }: UnlockedCardProps) {
+export function UnlockedAnswerCard({
+  heading,
+  text,
+  submittedAt,
+  imageUri,
+  onDoubleTapHeart,
+  doubleTapHeartDisabled,
+}: UnlockedCardProps) {
   return (
     <Card elevated={false} style={{ gap: 0 }}>
       <PromptAnswerMoment
+        doubleTapHeartDisabled={doubleTapHeartDisabled}
         heading={heading}
         imageUri={imageUri}
         submittedAt={submittedAt}
         text={text}
+        onDoubleTapHeart={onDoubleTapHeart}
       />
     </Card>
   );

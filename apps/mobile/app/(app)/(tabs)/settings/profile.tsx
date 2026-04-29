@@ -12,6 +12,7 @@ import { isSupabaseApiMode } from '@/services/apiMode';
 import { useServices } from '@/services/ServiceContext';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
+import { getTimeZoneDisplayLine } from '@/lib/timeZoneCatalog';
 import { resolveUserTimeZone } from '@/lib/userTimeZone';
 
 export default function SettingsProfileScreen() {
@@ -116,6 +117,7 @@ export default function SettingsProfileScreen() {
   const avatarSource = session.user.avatarUrl ? { uri: session.user.avatarUrl } : undefined;
   const resolvedTz = resolveUserTimeZone(timeZoneOverride);
   const deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const resolvedLine = getTimeZoneDisplayLine(resolvedTz);
 
   return (
     <SectionScaffold
@@ -178,13 +180,19 @@ export default function SettingsProfileScreen() {
           <Text style={{ color: theme.colors.textSecondary, fontSize: 13, marginBottom: spacing.xs }}>
             Time zone
           </Text>
-          <Text style={{ color: theme.colors.textPrimary, fontSize: 15, marginBottom: spacing.xs }}>
+          <Text style={{ color: theme.colors.textMuted, fontSize: 13, marginBottom: spacing.xs }}>
             {timeZoneOverride
-              ? `Home: ${timeZoneOverride} (reunion countdown and visit dates)`
-              : `Same as this device (${deviceTz})`}
+              ? 'Your choice (reunion countdown and visit dates use this offset).'
+              : `Same as this device — IANA: ${deviceTz}`}
           </Text>
-          <Text style={{ fontSize: 13, color: theme.colors.textMuted }}>
-            Resolved for the app: {resolvedTz}
+          <Text
+            style={{
+              color: theme.colors.textPrimary,
+              fontSize: 14,
+              lineHeight: 20,
+            }}
+          >
+            {resolvedLine}
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
             <Button label="Choose time zone" variant="secondary" onPress={() => setTzPickerOpen(true)} />

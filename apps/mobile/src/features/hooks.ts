@@ -28,6 +28,7 @@ export function useUpdateReunionDates() {
     mutationFn: (input: UpdateReunionDatesInput) => services.couple.updateReunionDates(input),
     onSuccess: (next) => {
       queryClient.setQueryData(['couple'], next);
+      void queryClient.invalidateQueries({ queryKey: ['prompt', 'streak'] });
     },
   });
 }
@@ -51,6 +52,16 @@ export function useTodayPrompt() {
   return useQuery({
     queryKey: ['prompt', 'today'],
     queryFn: () => services.prompt.getTodayPrompt(),
+  });
+}
+
+/** Home engagement streak; `anchorYmd` should match `PromptThread.date` (UTC calendar). */
+export function useHomeEngagementStreak(anchorYmd: string | undefined, homeTimeZone: string) {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['prompt', 'streak', anchorYmd ?? '', homeTimeZone],
+    queryFn: () => services.prompt.getHomeEngagementStreak(anchorYmd!, homeTimeZone),
+    enabled: Boolean(anchorYmd),
   });
 }
 
@@ -96,6 +107,7 @@ export function useSubmitPrompt() {
       syncPromptQueries(queryClient, next);
       queryClient.invalidateQueries({ queryKey: ['timeline'] });
       queryClient.invalidateQueries({ queryKey: ['relationshipDashboard'] });
+      void queryClient.invalidateQueries({ queryKey: ['prompt', 'streak'] });
     },
   });
 }
@@ -195,6 +207,7 @@ export function useSharePresence() {
       queryClient.invalidateQueries({ queryKey: ['presence', 'feed'] });
       queryClient.invalidateQueries({ queryKey: ['timeline'] });
       queryClient.invalidateQueries({ queryKey: ['relationshipDashboard'] });
+      void queryClient.invalidateQueries({ queryKey: ['prompt', 'streak'] });
     },
   });
 }
@@ -330,6 +343,8 @@ export function useNotificationInbox(limit = 50) {
   return useQuery({
     queryKey: ['notifications', 'inbox', limit] as const,
     queryFn: () => services.notificationInbox.listInbox(limit),
+    refetchOnMount: 'always',
+    staleTime: 15_000,
   });
 }
 

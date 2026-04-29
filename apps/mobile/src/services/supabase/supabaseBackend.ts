@@ -22,9 +22,22 @@ import type {
   UserProfile,
 } from '@/types/domain';
 import type { Tables, TablesUpdate } from '@/services/supabase/database.types';
+import {
+  addUtcDays,
+  computeEngagementStreakDays,
+  graceUtcYmdsInInclusiveWindow,
+  mergeSatisfiedUtcYmds,
+  mutualPresenceUtcYmds,
+} from '@/features/home/homeEngagementStreak';
 import { isUserAllowedToToggleHabit } from '@/features/habits/habitPolicy';
 import { getIsPromptRevealed } from '@/features/prompts/revealLogic';
-import { mapInviteFailure, requireClient, signedUrlForBucketPath, todayYmdUtc } from '@/services/supabase/helpers';
+import {
+  mapInviteFailure,
+  publicAvatarUrl,
+  requireClient,
+  signedUrlForBucketPath,
+  todayYmdUtc,
+} from '@/services/supabase/helpers';
 const DEFAULT_PROMPT_QUESTION = 'What brought you closer today?';
 
 function randomUuid(): string {
@@ -60,7 +73,7 @@ export async function loadCompleteCoupleProfile(): Promise<CoupleProfile | null>
 
   const { data: profiles } = await sb
     .from('profiles')
-    .select('id, first_name, display_name, time_zone')
+    .select('id, first_name, display_name, time_zone, avatar_storage_path')
     .in('id', [user.id, partnerId]);
 
   const partnerRow = profiles?.find((p) => p.id === partnerId);
@@ -68,6 +81,7 @@ export async function loadCompleteCoupleProfile(): Promise<CoupleProfile | null>
     id: partnerId,
     firstName: partnerRow?.first_name?.trim() || 'Partner',
     displayName: partnerRow?.display_name ?? undefined,
+    avatarUrl: publicAvatarUrl(partnerRow?.avatar_storage_path ?? undefined),
     timeZone: partnerRow?.time_zone ?? null,
   };
 
@@ -186,6 +200,69 @@ export async function getTodayPrompt(): Promise<PromptThread> {
   }
 
   return rowToPromptThread(row);
+}
+
+const HOME_ENGAGEMENT_STREAK_LOOKBACK_DAYS = 400;
+
+/**
+ * Consecutive UTC days (aligned with `couple_prompts.prompt_date`) where the couple
+ * revealed the daily prompt, both shared a presence photo that UTC day, or the day
+ * overlaps the reunion visit window.
+ */
+export async function getHomeEngagementStreak(
+  anchorPromptDateYmd: string,
+  homeTimeZone: string,
+): Promise<number> {
+  const couple = await loadCompleteCoupleProfile();
+  if (!couple) {
+    throw new Error('Complete pairing first to use this feature.');
+  }
+  const sb = requireClient();
+  const coupleId = couple.id;
+  const meId = couple.meId;
+  const partnerId = couple.partner.id;
+  const minYmd = addUtcDays(anchorPromptDateYmd, -HOME_ENGAGEMENT_STREAK_LOOKBACK_DAYS);
+  const createdFrom = `${minYmd}T00:00:00.000Z`;
+  const createdToExclusive = `${addUtcDays(anchorPromptDateYmd, 1)}T00:00:00.000Z`;
+
+  const [{ data: promptRows }, { data: presenceRows }] = await Promise.all([
+    sb
+      .from('couple_prompts')
+      .select('prompt_date')
+      .eq('couple_id', coupleId)
+      .eq('is_revealed', true)
+      .gte('prompt_date', minYmd)
+      .lte('prompt_date', anchorPromptDateYmd),
+    sb
+      .from('presence_posts')
+      .select('author_id, created_at')
+      .eq('couple_id', coupleId)
+      .gte('created_at', createdFrom)
+      .lt('created_at', createdToExclusive),
+  ]);
+
+  const revealedPromptDates = (promptRows ?? []).map((r) => r.prompt_date);
+  const mutualPresenceDates = mutualPresenceUtcYmds(
+    (presenceRows ?? []).map((r) => ({
+      authorId: r.author_id,
+      createdAt: r.created_at,
+    })),
+    meId,
+    partnerId,
+  );
+  const graceUtcYmds = graceUtcYmdsInInclusiveWindow(
+    minYmd,
+    anchorPromptDateYmd,
+    couple.reunionDate,
+    couple.reunionEndDate,
+    homeTimeZone,
+  );
+  const satisfied = mergeSatisfiedUtcYmds({
+    revealedPromptDates,
+    mutualPresenceDates,
+    graceUtcYmds,
+  });
+  return computeEngagementStreakDays(anchorPromptDateYmd, satisfied);
 }
 
 export async function getPromptById(promptId: string): Promise<PromptThread | null> {
@@ -529,6 +606,24 @@ export async function markAllRead(): Promise<NotificationInboxItem[]> {
   const { error } = await sb.from('notifications').update({ read: true }).eq('user_id', user.id);
   if (error) throw new Error(error.message);
   return listInbox();
+}
+
+export async function upsertExpoPushToken(expoPushToken: string, platform: string): Promise<void> {
+  const sb = requireClient();
+  const { data: userData } = await sb.auth.getUser();
+  const user = userData.user;
+  if (!user) throw new Error('Not signed in');
+  const iso = new Date().toISOString();
+  const { error } = await sb.from('user_push_tokens').upsert(
+    {
+      user_id: user.id,
+      expo_push_token: expoPushToken,
+      platform,
+      updated_at: iso,
+    },
+    { onConflict: 'expo_push_token' },
+  );
+  if (error) throw new Error(error.message);
 }
 
 export async function getPrivacy(): Promise<PrivacySettings> {

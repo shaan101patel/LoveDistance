@@ -33,7 +33,7 @@ function emptyBody(filter: TimelineMemoryFilter, hasSource: boolean): string {
   return 'No memories match your search.';
 }
 
-const TIMELINE_TAB_SUBTITLE = 'A repository of Prompts, photos, and shared moments';
+const TIMELINE_TAB_SUBTITLE = 'Prompts, photos, and shared moments';
 
 export default function TimelineScreen() {
   const navigation = useNavigation();

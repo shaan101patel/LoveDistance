@@ -166,6 +166,7 @@ export const supabaseServices: ServiceRegistry = {
     getPromptById: (id) => backend.getPromptById(id),
     submitPromptAnswer: (promptId, input) => backend.submitPromptAnswer(promptId, input),
     reactToPrompt: (promptId, emoji) => backend.reactToPrompt(promptId, emoji),
+    getHomeEngagementStreak: (anchor, tz) => backend.getHomeEngagementStreak(anchor, tz),
   },
   threadInteraction: {
     getThreadActivity: (promptId) => backend.getThreadActivity(promptId),
@@ -202,6 +203,9 @@ export const supabaseServices: ServiceRegistry = {
     listInbox: (limit) => backend.listInbox(limit),
     markRead: (ids) => backend.markRead(ids),
     markAllRead: () => backend.markAllRead(),
+  },
+  pushTokens: {
+    upsertExpoPushToken: (token, platform) => backend.upsertExpoPushToken(token, platform),
   },
   userSettings: {
     getPrivacy: () => backend.getPrivacy(),

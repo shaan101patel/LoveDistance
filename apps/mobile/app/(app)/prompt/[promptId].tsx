@@ -15,7 +15,6 @@ import {
   PhotoFollowUpSuggestions,
   PromptAnswerComposer,
   PromptCategoryChip,
-  ThreadReactionBar,
   ThreadReplyComposer,
   ThreadReplyList,
   UnlockedAnswerCard,
@@ -40,7 +39,7 @@ import { formatYmdLocal, toMonthKey } from '@/lib/calendarDates';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
-const THREAD_QUICK = ['❤️', '✨', '🧡'] as const;
+const HEART_EMOJI = '❤️';
 
 function parsePromptId(raw: string | string[] | undefined): string | undefined {
   if (raw == null) {
@@ -228,16 +227,24 @@ export default function PromptThreadScreen() {
         {vm.phase === 'unlocked' ? (
           <>
             <UnlockedAnswerCard
+              doubleTapHeartDisabled={promptReaction.isPending}
               heading="You"
               imageUri={vm.myAnswer.imageUri}
               submittedAt={vm.myAnswer.submittedAt}
               text={vm.myAnswer.answer}
+              onDoubleTapHeart={() =>
+                promptReaction.mutate({ promptId: thread.promptId, emoji: HEART_EMOJI })
+              }
             />
             <UnlockedAnswerCard
+              doubleTapHeartDisabled={promptReaction.isPending}
               heading={partnerName}
               imageUri={vm.partnerAnswer.imageUri}
               submittedAt={vm.partnerAnswer.submittedAt}
               text={vm.partnerAnswer.answer}
+              onDoubleTapHeart={() =>
+                promptReaction.mutate({ promptId: thread.promptId, emoji: HEART_EMOJI })
+              }
             />
             {vm.partnerAnswer.imageUri ? (
               <PhotoFollowUpSuggestions
@@ -249,17 +256,6 @@ export default function PromptThreadScreen() {
                 }}
               />
             ) : null}
-            <SectionCard>
-              <ThreadReactionBar
-                isPending={promptReaction.isPending}
-                reactions={thread.reactions}
-                onPickEmoji={(emoji) =>
-                  promptReaction.mutate({ promptId: thread.promptId, emoji })
-                }
-                quickEmojis={THREAD_QUICK}
-                title="Reactions to today’s answers"
-              />
-            </SectionCard>
 
             <View style={{ gap: spacing.md }}>
               <Heading>Follow-ups</Heading>
@@ -325,8 +321,12 @@ export default function PromptThreadScreen() {
             />
             <View style={{ marginTop: spacing.md }}>
               <PartnerAnswerPanel
+                doubleTapHeartDisabled={promptReaction.isPending}
                 row={vm.partnerRow}
                 title={partnerName === 'Partner' ? "Partner's space" : `${partnerName}’s answer`}
+                onDoubleTapHeart={() =>
+                  promptReaction.mutate({ promptId: thread.promptId, emoji: HEART_EMOJI })
+                }
               />
             </View>
           </SectionCard>
@@ -344,8 +344,12 @@ export default function PromptThreadScreen() {
               />
             </SectionCard>
             <PartnerAnswerPanel
+              doubleTapHeartDisabled={promptReaction.isPending}
               row={vm.partnerRow}
               title={partnerName === 'Partner' ? "Partner's space" : `${partnerName}’s answer`}
+              onDoubleTapHeart={() =>
+                promptReaction.mutate({ promptId: thread.promptId, emoji: HEART_EMOJI })
+              }
             />
           </>
         ) : null}
@@ -353,14 +357,22 @@ export default function PromptThreadScreen() {
         {vm.phase === 'awaitingPartner' ? (
           <>
             <UnlockedAnswerCard
+              doubleTapHeartDisabled={promptReaction.isPending}
               heading="You"
               imageUri={vm.myAnswer.imageUri}
               submittedAt={vm.myAnswer.submittedAt}
               text={vm.myAnswer.answer}
+              onDoubleTapHeart={() =>
+                promptReaction.mutate({ promptId: thread.promptId, emoji: HEART_EMOJI })
+              }
             />
             <PartnerAnswerPanel
+              doubleTapHeartDisabled={promptReaction.isPending}
               row={vm.partnerRow}
               title={partnerName === 'Partner' ? "Partner's space" : `${partnerName}’s answer`}
+              onDoubleTapHeart={() =>
+                promptReaction.mutate({ promptId: thread.promptId, emoji: HEART_EMOJI })
+              }
             />
           </>
         ) : null}

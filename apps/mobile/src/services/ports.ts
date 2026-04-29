@@ -62,6 +62,11 @@ export type PromptService = {
   getPromptById(promptId: string): Promise<PromptThread | null>;
   submitPromptAnswer(promptId: string, input: SubmitPromptAnswerInput): Promise<PromptThread>;
   reactToPrompt(promptId: string, emoji: string): Promise<PromptThread>;
+  /**
+   * Consecutive UTC days (same key as `PromptThread.date`) with revealed prompt,
+   * mutual presence photos that UTC day, or reunion visit overlap.
+   */
+  getHomeEngagementStreak(anchorPromptDateYmd: string, homeTimeZone: string): Promise<number>;
 };
 
 export type FollowUpSuggestionService = {
@@ -131,6 +136,10 @@ export type NotificationInboxService = {
   markAllRead(): Promise<NotificationInboxItem[]>;
 };
 
+export type PushTokensService = {
+  upsertExpoPushToken(expoPushToken: string, platform: string): Promise<void>;
+};
+
 /** Device-local preferences; mock uses `mockDb`; later replace with profile metadata + encrypted prefs. */
 export type UserSettingsService = {
   getPrivacy(): Promise<PrivacySettings>;
@@ -183,6 +192,7 @@ export type ServiceRegistry = {
   followUpSuggestions: FollowUpSuggestionService;
   notificationPrefs: NotificationPrefsService;
   notificationInbox: NotificationInboxService;
+  pushTokens: PushTokensService;
   userSettings: UserSettingsService;
   deepLinks: DeepLinkService;
   relationshipDashboard: RelationshipDashboardService;

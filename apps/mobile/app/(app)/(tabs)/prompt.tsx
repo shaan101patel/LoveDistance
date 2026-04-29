@@ -12,8 +12,7 @@ import { isSupabaseApiMode, promptTabCopy } from '@/services/apiMode';
 import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
-const PROMPT_TAB_SUBTITLE =
-  'One thoughtful question, answered when you are both ready.';
+const PROMPT_TAB_SUBTITLE = 'One thoughtful question.';
 
 export default function PromptTabScreen() {
   const navigation = useNavigation();

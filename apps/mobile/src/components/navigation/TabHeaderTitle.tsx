@@ -8,8 +8,8 @@ type Props = {
   subtitle: string;
 };
 
-/** Space reserved for `headerRight` (avatar + margins); keep in sync with MeHeaderAvatarButton. */
-const AVATAR_HEADER_RESERVE = 52;
+/** Space reserved for `headerRight` (bell + avatar + margins); keep in sync with MeHeaderRightCluster. */
+const AVATAR_HEADER_RESERVE = 92;
 /** Opaque strip so the centered subtitle can run full width without showing through the title. */
 const TITLE_OVERLAY_MAX_WIDTH = 120;
 
