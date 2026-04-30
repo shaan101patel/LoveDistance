@@ -1,6 +1,8 @@
 # LoveDistance
 
-LoveDistance is a couples app (Expo + React Native) with optional **Supabase** backend: auth, pairing, prompts, presence, timeline, habits, and notifications. A **mock** mode runs everything in-memory for fast local UX work.
+LoveDistance is for **best friends or couples** who want to stay close across long distance. Share **photos**, explore **interesting conversation topics and prompts**, and use more shared rituals in one place—so miles apart still feels connected.
+
+The app is **Expo + React Native** with an optional **Supabase** backend: auth, pairing, prompts, presence, timeline, habits, and notifications. A **mock** mode runs everything in-memory for fast local UX work.
 
 ## Repository layout
 
