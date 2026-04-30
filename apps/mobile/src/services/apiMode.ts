@@ -112,6 +112,50 @@ export const pairingScreenCopy = {
       ? 'Create an invite or enter your partner’s code. Invite tokens use the inv-… shape and appear after invite/ in shared links and lovedistance:// URLs.'
       : 'Mock pairing: create a link, or enter a code. Real tokens use the inv-… shape (after invite/ in the URL). Try expired, used, or invalid in enter-code to see edge states.';
   },
+  pairedSuccessIntroBody(live: boolean): string {
+    return live
+      ? 'Your couple is saved to your account. Both of you stay in sync when you use LoveDistance on your devices.'
+      : 'Mock data only on this device—Supabase will persist this couple record and keep devices in sync when you use live mode.';
+  },
+  pairedSuccessReunionLine(live: boolean, formattedDate: string): string {
+    return live
+      ? `Reunion visit: ${formattedDate}.`
+      : `Next reunion penciled for ${formattedDate} (sample date in mock mode on this device).`;
+  },
+};
+
+/** Relationship settings labels; branch on `EXPO_PUBLIC_API_MODE`. */
+export const relationshipSettingsCopy = {
+  coupleIdLabel(live: boolean): string {
+    return live ? 'Couple id' : 'Couple id (mock session)';
+  },
+  rhythmLinkLabel(live: boolean): string {
+    return live ? 'Your rhythm — gentle trends' : 'Your rhythm — gentle trends (mock sample)';
+  },
+  newInviteBlockedNote(live: boolean): string {
+    return live
+      ? 'While you are paired, creating a new invite is blocked—the same rule the server enforces for your account.'
+      : 'Creating a new invite is blocked in mock mode while you are already paired, matching a sensible server rule.';
+  },
+};
+
+/** Privacy screen; branch on live Supabase (prefs sync to `user_app_settings`). */
+export const privacyScreenCopy = {
+  lead(live: boolean): string {
+    return live
+      ? 'These toggles sync to your account where supported. Presence and analytics behavior follows what we ship in each release.'
+      : 'Same shape as a future `user_settings` or `profiles` row in Supabase. In mock mode, nothing leaves this device.';
+  },
+  sharePresenceDescription(live: boolean): string {
+    return live
+      ? 'Let your partner see when you are active in the app (when presence is available for your build).'
+      : 'Let your partner see when you open the app in mock mode (no real presence yet).';
+  },
+  productAnalyticsDescription(live: boolean): string {
+    return live
+      ? 'Opt in to anonymized product analytics when we offer it; this build may not send events yet.'
+      : 'Placeholder only — this build does not send analytics.';
+  },
 };
 
 /** Prompt tab placeholder copy; branch on `EXPO_PUBLIC_API_MODE`. */
@@ -124,8 +168,8 @@ export const promptTabCopy = {
       ? 'Your daily question, answers, delayed reveal, and thread live on Home and in the full prompt screen—this tab is for extras.'
       : 'The daily prompt, delayed reveal, and thread will show in this space.';
   },
-  openThreadLinkLabel(live: boolean): string {
-    return live ? 'Open sample prompt thread' : 'Open prompt thread placeholder';
+  openThreadLinkLabel(_live: boolean): string {
+    return "Open today's prompt";
   },
   plusUnlockedBody(live: boolean): string {
     return live
@@ -149,5 +193,119 @@ export const photosTabCopy = {
     return live
       ? 'Share a still from your day. Your couple feed is stored in Supabase for you and your partner.'
       : 'Share a still from your day. Everything here is local mock data until the backend is wired.';
+  },
+};
+
+/** Home quick-link hints under the feed. */
+export const homeQuickLinksCopy = {
+  rhythmHint(live: boolean): string {
+    return live
+      ? 'Warm trends from your time together'
+      : 'Warm trends from your time together (mock sample)';
+  },
+  recapHint(live: boolean): string {
+    return live ? 'Pick up to five photos for your week' : 'Pick up to five photos for your week (mock)';
+  },
+  alertsHint(live: boolean): string {
+    return live ? 'Notification center' : 'Notification center (mock events)';
+  },
+};
+
+/** Calendar tab strings that referenced mock-only rules. */
+export const calendarTabCopy = {
+  habitChangeDeniedMock(live: boolean): string {
+    return live
+      ? 'You can’t change this day for this habit.'
+      : 'You can’t change this day (mock rules for this habit).';
+  },
+  emptyMonthBody(live: boolean): string {
+    return live
+      ? 'No habits for this month yet. When you add some, they will show up here.'
+      : 'No habits for this month yet. When you add some, they will show up here (mock data).';
+  },
+};
+
+export const photoDetailCopy = {
+  notFoundBody(live: boolean): string {
+    return live
+      ? 'We could not find this photo in your feed. It may have been removed.'
+      : 'We could not find this photo in your local feed. It may have been removed in mock data.';
+  },
+};
+
+export const photoComposeCopy = {
+  demoImageHint(live: boolean): string {
+    return live
+      ? 'Uses a built-in sample image—no photo library permission needed.'
+      : 'No photos permission needed—local mock only (built-in sample image).';
+  },
+};
+
+export const quickSignalScreenCopy = {
+  goodNightLead(live: boolean): string {
+    return live
+      ? 'A short line your partner can read when they wake up. Saved for your couple (push when enabled).'
+      : 'A short line your partner can read when they wake up. Saved in mock data only—no push yet.';
+  },
+  missYouLead(live: boolean): string {
+    return live
+      ? 'Tell them you are thinking of them. Saved for your couple (push when enabled).'
+      : 'Tell them you are thinking of them. Mock-only log for now.';
+  },
+};
+
+export const securityScreenCopy = {
+  scaffoldLead(live: boolean): string {
+    return live
+      ? 'Passcode and Face ID / Touch ID sync as preferences on your account; native device lock UI will plug in here in a future release.'
+      : 'Expo + native Keychain and LocalAuthentication will plug in here. For now, toggles only update mock state.';
+  },
+  passcodeRowDescription(live: boolean): string {
+    return live
+      ? 'Require a passcode before opening the app. Full device lock UI is coming; this toggle records your preference on your account.'
+      : 'Mock: we mark a passcode as “set” without storing digits. Turning this off clears Face ID / Touch ID in mock mode.';
+  },
+  biometricRowDescriptionWhenPasscodeOn(live: boolean): string {
+    return live
+      ? 'Use Face ID or Touch ID after passcode is enabled (device integration coming).'
+      : 'Mock only — your device will use real biometrics in the production app.';
+  },
+  passcodeStatusLine(live: boolean, isSet: boolean): string {
+    const state = isSet ? 'set' : 'not set';
+    return live ? `Passcode preference: ${state}` : `Passcode status (mock): ${state}`;
+  },
+};
+
+export const settingsHubCopy = {
+  notificationsRowDescription(live: boolean): string {
+    return live
+      ? 'Partner alerts, scheduled reminders, and notification previews'
+      : 'What we can nudge you about (mock)';
+  },
+  privacyRowDescription(live: boolean): string {
+    return live
+      ? 'Presence, analytics opt-in, notification previews'
+      : 'Presence, analytics placeholder, notification previews';
+  },
+  securityRowDescription(live: boolean): string {
+    return live
+      ? 'Passcode and Face ID / Touch ID (preference sync; native lock UI upcoming)'
+      : 'Passcode and Face ID / Touch ID placeholders';
+  },
+};
+
+export const relationshipDashboardCopy = {
+  plusPreviewBody(live: boolean): string {
+    return live
+      ? 'Longer windows and exports will live here on Plus. Seasonal trends remain preview data until a dedicated analytics pipeline ships.'
+      : 'Longer windows and exports will live here on Plus. Still sample data until a real analytics backend ships.';
+  },
+};
+
+export const weeklyRecapSummaryCopy = {
+  scaffoldLead(live: boolean): string {
+    return live
+      ? 'A soft summary of what you chose—ranking highlights will use your couple data when the next version ships.'
+      : 'A soft summary of what you chose—ranking highlights will appear here when the next version ships.';
   },
 };

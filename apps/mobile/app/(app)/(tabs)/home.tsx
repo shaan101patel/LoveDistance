@@ -29,6 +29,7 @@ import { MOCK_PARTNER_TIME_ZONE } from '@/features/rituals/ritualTimePresentatio
 import { isMorningRitualCompleteForUser } from '@/features/rituals/morningRitual';
 import { formatYmdLocal, toMonthKey } from '@/lib/calendarDates';
 import { resolveUserTimeZone } from '@/lib/userTimeZone';
+import { homeQuickLinksCopy, isSupabaseApiMode } from '@/services/apiMode';
 import { useServices } from '@/services/ServiceContext';
 import {
   devSimulatePartnerTodayAnswer,
@@ -36,22 +37,6 @@ import {
 } from '@/services/mock/mockDevHelpers';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
-
-const quickLinks: { href: Href; label: string; hint: string }[] = [
-  { href: '/(app)/(tabs)/photos', label: 'Photos', hint: 'Shared presence' },
-  { href: '/(app)/(tabs)/calendar', label: 'Calendar', hint: 'Habits & time' },
-  {
-    href: '/(app)/relationship-dashboard' as Href,
-    label: 'Rhythm',
-    hint: 'Warm trends from your time together (mock)',
-  },
-  {
-    href: '/(app)/weekly-recap/select' as Href,
-    label: 'Recap',
-    hint: 'Pick up to five photos for your week (mock)',
-  },
-  { href: '/(app)/notifications' as Href, label: 'Alerts', hint: 'Notification center (mock)' },
-];
 
 const HOME_TAB_SUBTITLE = "Today's question, shared presence, and small ritual";
 
@@ -83,6 +68,25 @@ export default function HomeScreen() {
   const partner = couple?.partner;
   const homeTimeZone = resolveUserTimeZone(session?.user.timeZone);
   const partnerTimeZone = partner?.timeZone?.trim() || MOCK_PARTNER_TIME_ZONE;
+  const live = isSupabaseApiMode();
+  const quickLinks = useMemo(
+    (): { href: Href; label: string; hint: string }[] => [
+      { href: '/(app)/(tabs)/photos', label: 'Photos', hint: 'Shared presence' },
+      { href: '/(app)/(tabs)/calendar', label: 'Calendar', hint: 'Habits & time' },
+      {
+        href: '/(app)/relationship-dashboard' as Href,
+        label: 'Rhythm',
+        hint: homeQuickLinksCopy.rhythmHint(live),
+      },
+      {
+        href: '/(app)/weekly-recap/select' as Href,
+        label: 'Recap',
+        hint: homeQuickLinksCopy.recapHint(live),
+      },
+      { href: '/(app)/notifications' as Href, label: 'Alerts', hint: homeQuickLinksCopy.alertsHint(live) },
+    ],
+    [live],
+  );
 
   const streakQuery = useHomeEngagementStreak(thread?.date, homeTimeZone);
   const streakDaysForFeed = streakQuery.isSuccess

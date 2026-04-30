@@ -10,18 +10,23 @@ import {
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useRelationshipDashboard } from '@/features/hooks';
-import { authScreenCopy, isSupabaseApiMode } from '@/services/apiMode';
+import {
+  authScreenCopy,
+  isSupabaseApiMode,
+  relationshipDashboardCopy,
+} from '@/services/apiMode';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
 export default function RelationshipDashboardScreen() {
   const theme = useTheme();
+  const live = isSupabaseApiMode();
   const { data, isLoading, isError } = useRelationshipDashboard();
 
   return (
     <SectionScaffold
       kicker="Together"
-      lead={authScreenCopy.relationshipDashboardLead(isSupabaseApiMode())}
+      lead={authScreenCopy.relationshipDashboardLead(live)}
       title="Your rhythm"
     >
       {isLoading ? (
@@ -60,7 +65,7 @@ export default function RelationshipDashboardScreen() {
           >
             <PremiumPlaceholderCard
               title="Deeper analytics (preview)"
-              body="Longer windows and exports will live here on Plus. Still sample data until a real analytics backend ships."
+              body={relationshipDashboardCopy.plusPreviewBody(live)}
             />
           </PremiumGate>
         </View>

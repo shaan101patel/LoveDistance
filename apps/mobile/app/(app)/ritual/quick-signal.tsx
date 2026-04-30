@@ -6,6 +6,7 @@ import { Button } from '@/components/primitives/Button';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body } from '@/components/ui';
 import { useCurrentUserId, useLogRitualSignal, useRitualSignals } from '@/features/hooks';
+import { isSupabaseApiMode, quickSignalScreenCopy } from '@/services/apiMode';
 import type { RitualSignalKind } from '@/types/domain';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing, typeBase } from '@/theme/tokens';
@@ -20,6 +21,7 @@ function parseKind(raw: string | string[] | undefined): RitualSignalKind | null 
 export default function QuickSignalScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const live = isSupabaseApiMode();
   const { kind: kindParam } = useLocalSearchParams<{ kind?: string | string[] }>();
   const kind = parseKind(kindParam);
   const [body, setBody] = useState('');
@@ -35,9 +37,9 @@ export default function QuickSignalScreen() {
   const title = kind === 'good_night' ? 'Good night note' : kind === 'miss_you' ? 'Miss-you check-in' : 'Quick signal';
   const lead =
     kind === 'good_night'
-      ? 'A short line your partner can read when they wake up. Saved in mock data only—no push yet.'
+      ? quickSignalScreenCopy.goodNightLead(live)
       : kind === 'miss_you'
-        ? 'Tell them you are thinking of them. Mock-only log for now.'
+        ? quickSignalScreenCopy.missYouLead(live)
         : 'This screen needs a ritual type in the link (good_night or miss_you).';
 
   if (!kind) {

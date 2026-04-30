@@ -8,6 +8,7 @@ import { Card } from '@/components/primitives/Card';
 import { PhotoSharePreviewForm, type MoodTag } from '@/components/presence';
 import { Body, Heading, Screen } from '@/components/ui';
 import { useSharePresence } from '@/features/hooks';
+import { isSupabaseApiMode, photoComposeCopy } from '@/services/apiMode';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 
@@ -16,6 +17,7 @@ const DEMO_STILL_LIFE =
 
 export default function PhotoComposeScreen() {
   const theme = useTheme();
+  const live = isSupabaseApiMode();
   const router = useRouter();
   const params = useLocalSearchParams<{ ritual?: string | string[] }>();
   const ritualRaw = params.ritual;
@@ -115,7 +117,7 @@ export default function PhotoComposeScreen() {
           </Pressable>
           <Pressable onPress={() => showPicker('demo')} style={entryStyles.entryButton}>
             <Text style={entryStyles.entryLabel}>Use a demo image</Text>
-            <Text style={entryStyles.entryHint}>No photos permission needed—local mock only</Text>
+            <Text style={entryStyles.entryHint}>{photoComposeCopy.demoImageHint(live)}</Text>
           </Pressable>
         </View>
       </Screen>

@@ -11,6 +11,7 @@ Configuration template: [`apps/mobile/.env.example`](../apps/mobile/.env.example
 | `EXPO_PUBLIC_API_MODE` | No (default: `mock`) | `mock` — in-memory [`mockServices`](../apps/mobile/src/services/mock/mockServices.ts). `supabase` — [`supabaseServices`](../apps/mobile/src/services/supabase/supabaseServices.ts) against your Supabase project. |
 | `EXPO_PUBLIC_SUPABASE_URL` | Yes when mode is `supabase` | Project URL, e.g. `https://<ref>.supabase.co` (Dashboard → Project Settings → API). |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Yes when mode is `supabase` | **Anon** public key (same screen). Used with RLS; never use the **service_role** key in the app. |
+| `EXPO_PUBLIC_SUPPORT_EMAIL` | No | Mailto address for Settings → Send feedback and Delete account. Defaults to `support@lovedistance.com` in code when unset ([`getSupportEmail`](../apps/mobile/src/lib/supportEmail.ts)). |
 
 ## Runtime behavior
 

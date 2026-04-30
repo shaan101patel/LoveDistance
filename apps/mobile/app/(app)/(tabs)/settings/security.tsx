@@ -4,9 +4,11 @@ import { SettingsToggleRow } from '@/components/settings';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useAppLock } from '@/features/hooks';
+import { isSupabaseApiMode, securityScreenCopy } from '@/services/apiMode';
 import { spacing } from '@/theme/tokens';
 
 export default function SettingsSecurityScreen() {
+  const live = isSupabaseApiMode();
   const { query, mutation } = useAppLock();
   const lock = query.data;
   const biometricOk = Boolean(lock?.requirePasscode);
@@ -14,7 +16,7 @@ export default function SettingsSecurityScreen() {
   return (
     <SectionScaffold
       kicker="Device"
-      lead="Expo + native Keychain and LocalAuthentication will plug in here. For now, toggles only update mock state."
+      lead={securityScreenCopy.scaffoldLead(live)}
       title="App lock"
     >
       {query.isLoading ? <Body>Loading…</Body> : null}
@@ -24,7 +26,7 @@ export default function SettingsSecurityScreen() {
           <SectionCard>
             <View style={{ gap: spacing.lg }}>
               <SettingsToggleRow
-                description="Mock: we mark a passcode as 'set' without storing digits. Turning this off clears Face ID / Touch ID in mock mode."
+                description={securityScreenCopy.passcodeRowDescription(live)}
                 label="Require passcode"
                 onValueChange={(v) => mutation.mutate({ requirePasscode: v })}
                 value={lock.requirePasscode}
@@ -32,7 +34,7 @@ export default function SettingsSecurityScreen() {
               <SettingsToggleRow
                 description={
                   lock.requirePasscode
-                    ? 'Mock only — your device will use real biometrics in the production app.'
+                    ? securityScreenCopy.biometricRowDescriptionWhenPasscodeOn(live)
                     : 'Turn on passcode first to enable biometrics (standard pattern).'
                 }
                 disabled={!lock.requirePasscode}
@@ -43,7 +45,7 @@ export default function SettingsSecurityScreen() {
             </View>
           </SectionCard>
           <SectionCard>
-            <Body>Passcode status (mock): {lock.isPasscodeSet ? 'set' : 'not set'}</Body>
+            <Body>{securityScreenCopy.passcodeStatusLine(live, lock.isPasscodeSet)}</Body>
           </SectionCard>
         </>
       ) : null}

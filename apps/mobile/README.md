@@ -5,7 +5,7 @@ Expo + TypeScript + Expo Router app: auth, onboarding, pairing, tabs (Home, Prom
 ## Monorepo docs (start here)
 
 - **[Setup & run](../../docs/SETUP.md)** — install, `.env`, Expo start, optional Supabase CLI  
-- **[Environment variables](../../docs/ENVIRONMENT.md)** — `EXPO_PUBLIC_API_MODE`, Supabase URL/key  
+- **[Environment variables](../../docs/ENVIRONMENT.md)** — `EXPO_PUBLIC_API_MODE`, Supabase URL/key, optional `EXPO_PUBLIC_SUPPORT_EMAIL`  
 - **[Supabase](../../docs/SUPABASE.md)** — migrations, Edge `accept-invite`, linking  
 - **[Release checklist](../../docs/RELEASE_CHECKLIST.md)** — pre-ship gates and smoke tests  
 

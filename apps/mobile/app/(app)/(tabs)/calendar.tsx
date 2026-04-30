@@ -18,6 +18,7 @@ import { useCouple, useCurrentUserId, useHabits, useToggleHabit } from '@/featur
 import { localYmdIntersectsReunionVisit } from '@/features/rituals/ritualTimePresentation';
 import { addLocalDays, formatYmdLocal, getMonthGridCells, getWeekYmdsForDay, toMonthKey } from '@/lib/calendarDates';
 import { resolveUserTimeZone } from '@/lib/userTimeZone';
+import { calendarTabCopy, isSupabaseApiMode } from '@/services/apiMode';
 import { useServices } from '@/services/ServiceContext';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing, typeBase } from '@/theme/tokens';
@@ -30,6 +31,7 @@ const CALENDAR_TAB_SUBTITLE = 'Small shared rituals for steady closeness';
 
 export default function CalendarTabScreen() {
   const theme = useTheme();
+  const live = isSupabaseApiMode();
   const today = useMemo(() => {
     const t = new Date();
     return new Date(t.getFullYear(), t.getMonth(), t.getDate());
@@ -155,7 +157,7 @@ export default function CalendarTabScreen() {
     selectedHabit && meId && !isUserAllowedToToggleHabit(selectedHabit, meId, ctx)
       ? selectedHabit.type === 'yours'
         ? 'Partner checks this one off in the app.'
-        : "You can’t change this day (mock rules for this habit)."
+        : calendarTabCopy.habitChangeDeniedMock(live)
       : null;
 
   return (
@@ -169,7 +171,7 @@ export default function CalendarTabScreen() {
           <ActivityIndicator color={theme.colors.primary} size="large" />
         ) : !habits?.length ? (
           <SectionCard>
-            <Body>No habits for this month yet. When you add some, they will show up here (mock data).</Body>
+            <Body>{calendarTabCopy.emptyMonthBody(live)}</Body>
           </SectionCard>
         ) : null}
 

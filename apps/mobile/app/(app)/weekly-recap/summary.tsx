@@ -6,6 +6,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useWeeklyRecapDraft } from '@/features/hooks';
+import { isSupabaseApiMode, weeklyRecapSummaryCopy } from '@/services/apiMode';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 
@@ -37,6 +38,7 @@ function RankingPlaceholderCard({
 
 export default function WeeklyRecapSummaryScreen() {
   const theme = useTheme();
+  const live = isSupabaseApiMode();
   const params = useLocalSearchParams<{ weekStartYmd?: string; ids?: string | string[] }>();
   const weekStartYmd = typeof params.weekStartYmd === 'string' ? params.weekStartYmd : '';
   const idsParam = useMemo(() => {
@@ -62,7 +64,7 @@ export default function WeeklyRecapSummaryScreen() {
   return (
     <SectionScaffold
       kicker="Sunday recap"
-      lead="A soft summary of what you chose—ranking highlights will appear here when the next version ships."
+      lead={weeklyRecapSummaryCopy.scaffoldLead(live)}
       title="Your week together"
     >
       {draft.isPending || draft.isFetching ? (

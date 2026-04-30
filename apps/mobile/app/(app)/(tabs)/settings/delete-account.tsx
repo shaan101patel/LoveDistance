@@ -2,13 +2,13 @@ import { Linking, Pressable, Text, View } from 'react-native';
 
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
+import { getSupportEmail } from '@/lib/supportEmail';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
-const ACCOUNT_DELETION_EMAIL = 'placeholder@gmail.com';
-
 export default function SettingsDeleteAccountScreen() {
   const theme = useTheme();
+  const accountDeletionEmail = getSupportEmail();
 
   return (
     <SectionScaffold
@@ -23,9 +23,9 @@ export default function SettingsDeleteAccountScreen() {
         </Body>
         <View style={{ marginTop: spacing.lg }}>
           <Pressable
-            accessibilityLabel={`Email ${ACCOUNT_DELETION_EMAIL}`}
+            accessibilityLabel={`Email ${accountDeletionEmail}`}
             accessibilityRole="link"
-            onPress={() => void Linking.openURL(`mailto:${ACCOUNT_DELETION_EMAIL}`)}
+            onPress={() => void Linking.openURL(`mailto:${accountDeletionEmail}`)}
             style={({ pressed }) => [{ opacity: pressed ? 0.75 : 1 }]}
           >
             <Text
@@ -35,7 +35,7 @@ export default function SettingsDeleteAccountScreen() {
                 fontWeight: '600',
               }}
             >
-              {ACCOUNT_DELETION_EMAIL}
+              {accountDeletionEmail}
             </Text>
           </Pressable>
         </View>

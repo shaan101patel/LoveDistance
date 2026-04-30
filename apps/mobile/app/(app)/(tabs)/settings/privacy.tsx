@@ -5,11 +5,13 @@ import { SettingsSubheading, SettingsToggleRow } from '@/components/settings';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { usePrivacySettings } from '@/features/hooks';
+import { isSupabaseApiMode, privacyScreenCopy } from '@/services/apiMode';
 import { spacing } from '@/theme/tokens';
 
 export default function SettingsPrivacyScreen() {
   const { query, mutation } = usePrivacySettings();
   const p = query.data;
+  const live = isSupabaseApiMode();
 
   const content = useMemo(() => {
     if (!p) {
@@ -18,13 +20,13 @@ export default function SettingsPrivacyScreen() {
     return (
       <View style={{ gap: spacing.lg }}>
         <SettingsToggleRow
-          description="Let your partner see when you open the app in mock mode (no real presence yet)."
+          description={privacyScreenCopy.sharePresenceDescription(live)}
           label="Share presence with partner"
           onValueChange={(v) => mutation.mutate({ sharePresence: v })}
           value={p.sharePresence}
         />
         <SettingsToggleRow
-          description="Placeholder only — this build does not send analytics."
+          description={privacyScreenCopy.productAnalyticsDescription(live)}
           label="Product improvements (opt-in)"
           onValueChange={(v) => mutation.mutate({ productAnalytics: v })}
           value={p.productAnalytics}
@@ -37,12 +39,12 @@ export default function SettingsPrivacyScreen() {
         />
       </View>
     );
-  }, [mutation, p]);
+  }, [live, mutation, p]);
 
   return (
     <SectionScaffold
       kicker="Control"
-      lead="Same shape as a future `user_settings` or `profiles` row in Supabase. Nothing syncs to a server in this build."
+      lead={privacyScreenCopy.lead(live)}
       title="Privacy"
     >
       {query.isLoading ? <Body>Loading…</Body> : null}

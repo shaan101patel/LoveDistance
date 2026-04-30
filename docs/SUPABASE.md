@@ -71,3 +71,11 @@ Buckets such as `presence` and `prompt_attachments` are defined in migrations / 
 ## Optional: Cursor MCP
 
 If the Supabase MCP is enabled in Cursor, you can run read-only checks (e.g. list tables, `execute_sql` for validation). It does not replace migrations in git or `db push` for schema of record.
+
+## Integration verification loop (after schema or client changes)
+
+1. **Link & migrate**: `supabase link --project-ref <ref>` then `supabase db push` (or `supabase db reset` locally).
+2. **Types**: If tables/columns changed, regenerate `apps/mobile/src/services/supabase/database.types.ts` (`supabase gen types typescript --linked` → pipe into that file) and fix TypeScript in `supabaseBackend.ts` / `supabaseServices.ts`.
+3. **Mobile env**: `EXPO_PUBLIC_API_MODE=supabase` plus URL and anon key in `apps/mobile/.env` ([ENVIRONMENT.md](./ENVIRONMENT.md)).
+4. **Smoke**: Pair two test users; open Timeline → memory detail, Prompt tab → thread, Settings privacy/security toggles, ritual quick-signal; confirm rows in `memories`, `ritual_signals`, `user_app_settings` as expected.
+5. **MCP**: Use Supabase MCP tools only after reading each tool’s schema; prefer read-only SQL to confirm RLS (e.g. `memories` scoped to `user_couple_ids()`).

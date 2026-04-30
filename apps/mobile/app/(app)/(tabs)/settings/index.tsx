@@ -8,7 +8,7 @@ import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useOnboardingStore } from '@/features/session/onboardingStore';
 import { useSessionStore } from '@/features/session/sessionStore';
-import { authScreenCopy, isSupabaseApiMode } from '@/services/apiMode';
+import { authScreenCopy, isSupabaseApiMode, settingsHubCopy } from '@/services/apiMode';
 import { useServices } from '@/services/ServiceContext';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
@@ -17,6 +17,7 @@ const base = '/(app)/(tabs)/settings' as const;
 
 export default function SettingsHubScreen() {
   const theme = useTheme();
+  const live = isSupabaseApiMode();
   const queryClient = useQueryClient();
   const services = useServices();
   const setSignedIn = useSessionStore((s) => s.setSignedIn);
@@ -39,7 +40,7 @@ export default function SettingsHubScreen() {
   return (
     <SectionScaffold
       kicker="You"
-      lead={authScreenCopy.settingsLead(isSupabaseApiMode())}
+      lead={authScreenCopy.settingsLead(live)}
       title="Settings"
     >
       <SectionCard>
@@ -50,17 +51,17 @@ export default function SettingsHubScreen() {
             onPress={() => router.push(`${base}/profile`)}
           />
           <SettingsLinkRow
-            description="What we can nudge you about (mock)"
+            description={settingsHubCopy.notificationsRowDescription(live)}
             label="Notifications"
             onPress={() => router.push(`${base}/notifications`)}
           />
           <SettingsLinkRow
-            description="Presence, analytics placeholder, notification previews"
+            description={settingsHubCopy.privacyRowDescription(live)}
             label="Privacy"
             onPress={() => router.push(`${base}/privacy`)}
           />
           <SettingsLinkRow
-            description="Passcode and Face ID / Touch ID placeholders"
+            description={settingsHubCopy.securityRowDescription(live)}
             label="App lock"
             onPress={() => router.push(`${base}/security`)}
           />
@@ -98,11 +99,11 @@ export default function SettingsHubScreen() {
           </Link>
         </View>
         <View style={{ marginTop: spacing.lg }}>
-          <Body>{authScreenCopy.settingsSignOutDetail(isSupabaseApiMode())}</Body>
+          <Body>{authScreenCopy.settingsSignOutDetail(live)}</Body>
         </View>
         <View style={{ marginTop: spacing.md }}>
           <Button
-            label={authScreenCopy.settingsSignOutButtonLabel(isSupabaseApiMode())}
+            label={authScreenCopy.settingsSignOutButtonLabel(live)}
             onPress={signOut}
             variant="ghost"
           />

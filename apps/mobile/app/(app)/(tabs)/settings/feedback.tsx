@@ -2,14 +2,14 @@ import { Linking, Pressable, Text, View } from 'react-native';
 
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
+import { getSupportEmail } from '@/lib/supportEmail';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
-const FEEDBACK_EMAIL = 'placeholder@gmail.com';
-const FEEDBACK_MAILTO = `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('LoveDistance feedback')}`;
-
 export default function SettingsFeedbackScreen() {
   const theme = useTheme();
+  const feedbackEmail = getSupportEmail();
+  const feedbackMailto = `mailto:${feedbackEmail}?subject=${encodeURIComponent('LoveDistance feedback')}`;
 
   return (
     <SectionScaffold
@@ -23,9 +23,9 @@ export default function SettingsFeedbackScreen() {
         </Body>
         <View style={{ marginTop: spacing.lg }}>
           <Pressable
-            accessibilityLabel={`Email ${FEEDBACK_EMAIL}`}
+            accessibilityLabel={`Email ${feedbackEmail}`}
             accessibilityRole="link"
-            onPress={() => void Linking.openURL(FEEDBACK_MAILTO)}
+            onPress={() => void Linking.openURL(feedbackMailto)}
             style={({ pressed }) => [{ opacity: pressed ? 0.75 : 1 }]}
           >
             <Text
@@ -35,7 +35,7 @@ export default function SettingsFeedbackScreen() {
                 fontWeight: '600',
               }}
             >
-              {FEEDBACK_EMAIL}
+              {feedbackEmail}
             </Text>
           </Pressable>
         </View>

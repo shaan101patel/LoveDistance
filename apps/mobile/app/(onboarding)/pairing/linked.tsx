@@ -7,6 +7,7 @@ import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useCouple } from '@/features/hooks';
 import { useSessionStore } from '@/features/session/sessionStore';
+import { isSupabaseApiMode, pairingScreenCopy } from '@/services/apiMode';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
@@ -15,6 +16,7 @@ export default function PairedSuccessScreen() {
   const returnPath = useSessionStore((s) => s.returnPath);
   const setReturnPath = useSessionStore((s) => s.setReturnPath);
   const theme = useTheme();
+  const live = isSupabaseApiMode();
   const partnerName = couple?.partner.firstName ?? 'your partner';
   const reunionHint = couple?.reunionDate
     ? new Date(couple.reunionDate).toLocaleDateString(undefined, {
@@ -43,9 +45,7 @@ export default function PairedSuccessScreen() {
             Connected with {partnerName}
           </Text>
           <View style={{ marginBottom: spacing.md }}>
-            <Body>
-              Mock data only—Supabase will persist this couple record and keep devices in sync.
-            </Body>
+            <Body>{pairingScreenCopy.pairedSuccessIntroBody(live)}</Body>
           </View>
         </>
       )}
@@ -62,7 +62,7 @@ export default function PairedSuccessScreen() {
                   marginBottom: spacing.md,
                 }}
               >
-                Next reunion penciled for {reunionHint} (sample date from mock data).
+                {pairingScreenCopy.pairedSuccessReunionLine(live, reunionHint)}
               </Text>
             ) : null}
             <Button

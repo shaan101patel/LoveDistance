@@ -7,6 +7,7 @@ import { Image } from 'expo-image';
 import { Card } from '@/components/primitives/Card';
 import { Body, Heading, Screen, SectionCard } from '@/components/ui';
 import { useCouple, useCurrentUserId, usePresenceFeed, useReactToPost } from '@/features/hooks';
+import { isSupabaseApiMode, photoDetailCopy } from '@/services/apiMode';
 import { Button } from '@/components/primitives/Button';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
@@ -17,6 +18,7 @@ function titleCaseMood(mood: string) {
 
 export default function PhotoDetailScreen() {
   const theme = useTheme();
+  const live = isSupabaseApiMode();
   const { photoId } = useLocalSearchParams<{ photoId: string }>();
   const id = typeof photoId === 'string' ? photoId : photoId?.[0];
   const { data: posts, isLoading } = usePresenceFeed();
@@ -59,7 +61,7 @@ export default function PhotoDetailScreen() {
     return (
       <Screen>
         <Heading>Photo</Heading>
-        <Body>We could not find this photo in your local feed. It may have been removed in mock data.</Body>
+        <Body>{photoDetailCopy.notFoundBody(live)}</Body>
       </Screen>
     );
   }

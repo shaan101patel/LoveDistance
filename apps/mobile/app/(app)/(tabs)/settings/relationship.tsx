@@ -5,12 +5,17 @@ import { Button } from '@/components/primitives';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
 import { useCouple } from '@/features/hooks';
-import { authScreenCopy, isSupabaseApiMode } from '@/services/apiMode';
+import {
+  authScreenCopy,
+  isSupabaseApiMode,
+  relationshipSettingsCopy,
+} from '@/services/apiMode';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
 export default function SettingsRelationshipScreen() {
   const theme = useTheme();
+  const live = isSupabaseApiMode();
   const { data: couple, isLoading } = useCouple();
 
   if (isLoading) {
@@ -36,7 +41,7 @@ export default function SettingsRelationshipScreen() {
   return (
     <SectionScaffold
       kicker="Together"
-      lead={authScreenCopy.relationshipSettingsLead(isSupabaseApiMode())}
+      lead={authScreenCopy.relationshipSettingsLead(live)}
       title="Relationship"
     >
       <SectionCard>
@@ -48,7 +53,9 @@ export default function SettingsRelationshipScreen() {
           </Text>
         </View>
         <View style={{ gap: spacing.xs, marginBottom: spacing.md }}>
-          <Text style={{ color: theme.colors.textSecondary, fontSize: 13 }}>Couple (mock id)</Text>
+          <Text style={{ color: theme.colors.textSecondary, fontSize: 13 }}>
+            {relationshipSettingsCopy.coupleIdLabel(live)}
+          </Text>
           <Text selectable style={{ color: theme.colors.textPrimary, fontSize: 15 }}>
             {couple.id}
           </Text>
@@ -77,7 +84,7 @@ export default function SettingsRelationshipScreen() {
         <Link href={'/(app)/relationship-dashboard' as Href} asChild>
           <Pressable style={{ marginBottom: spacing.md }}>
             <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>
-              Your rhythm — gentle trends (mock)
+              {relationshipSettingsCopy.rhythmLinkLabel(live)}
             </Text>
           </Pressable>
         </Link>
@@ -89,10 +96,7 @@ export default function SettingsRelationshipScreen() {
           </Pressable>
         </Link>
         <View style={{ marginTop: spacing.md }}>
-          <Body>
-            Creating a new invite is blocked in mock mode while you are already paired, matching a
-            sensible server rule.
-          </Body>
+          <Body>{relationshipSettingsCopy.newInviteBlockedNote(live)}</Body>
         </View>
       </SectionCard>
     </SectionScaffold>

@@ -310,14 +310,25 @@ export function useTimeline(filter: TimelineMemoryFilter = 'all') {
   });
 }
 
+/** Single memory for detail / deep link; `data` is `null` when not found (success). */
+export function useMemory(memoryId: string | undefined) {
+  const services = useServices();
+  return useQuery({
+    queryKey: ['timeline', 'memory', memoryId] as const,
+    queryFn: () => services.timeline.getMemoryById(memoryId!),
+    enabled: Boolean(memoryId),
+  });
+}
+
 export function useSetMemoryFavorite() {
   const services = useServices();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ memoryId, isFavorite }: { memoryId: string; isFavorite: boolean }) =>
       services.timeline.setMemoryFavorite(memoryId, isFavorite),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['timeline'] });
+    onSuccess: (updated, { memoryId }) => {
+      queryClient.setQueryData(['timeline', 'memory', memoryId], updated);
+      void queryClient.invalidateQueries({ queryKey: ['timeline'] });
     },
   });
 }
