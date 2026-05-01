@@ -15,10 +15,8 @@ import {
   PhotoFollowUpSuggestions,
   PromptAnswerComposer,
   PromptCategoryChip,
-  ThreadReplyComposer,
-  ThreadReplyList,
+  PromptThreadFollowUpsSection,
   UnlockedAnswerCard,
-  VoiceNotePlaceholderCard,
 } from '@/components/prompt';
 import { Body, Heading, SectionCard, Screen } from '@/components/ui';
 import {
@@ -82,7 +80,7 @@ export default function PromptThreadScreen() {
   }, [thread, meId, partnerId, partnerName]);
 
   const { data: threadActivity, isLoading: activityLoading } = useThreadActivity(promptId, {
-    enabled: vm?.phase === 'unlocked',
+    enabled: Boolean(promptId && thread && meId && partnerId),
   });
 
   const replyRoots = useMemo(
@@ -246,63 +244,6 @@ export default function PromptThreadScreen() {
                 promptReaction.mutate({ promptId: thread.promptId, emoji: HEART_EMOJI })
               }
             />
-            {vm.partnerAnswer.imageUri ? (
-              <PhotoFollowUpSuggestions
-                imageUri={vm.partnerAnswer.imageUri}
-                partnerName={partnerName}
-                promptQuestion={vm.question}
-                onSelectLine={(line) => {
-                  setReplyInject((s) => ({ rev: s.rev + 1, text: line }));
-                }}
-              />
-            ) : null}
-
-            <View style={{ gap: spacing.md }}>
-              <Heading>Follow-ups</Heading>
-              <Body>Chat below is separate from your official daily answers—great for quick continuations.</Body>
-              {threadActivity?.voiceNotePlaceholders.map((slot) => (
-                <VoiceNotePlaceholderCard key={slot.id} label={slot.label} />
-              ))}
-              {activityLoading ? (
-                <Body>Loading conversation…</Body>
-              ) : threadActivity ? (
-                <>
-                  <ThreadReplyList
-                    meId={meId}
-                    partnerName={partnerName}
-                    replyReactionPending={threadReplyReact.isPending}
-                    roots={replyRoots}
-                    onReact={(replyId, emoji) =>
-                      threadReplyReact.mutate({
-                        promptId: thread.promptId,
-                        replyId,
-                        emoji,
-                      })
-                    }
-                    onReply={(parentId) => setReplyParentId(parentId)}
-                  />
-                  <SectionCard>
-                    <ThreadReplyComposer
-                      isSubmitting={addThreadReply.isPending}
-                      parentReplyId={replyParentId}
-                      prefillRevision={replyInject.rev}
-                      prefillText={replyInject.text}
-                      onClearParent={() => setReplyParentId(null)}
-                      onSubmit={(body, parentId) => {
-                        addThreadReply.mutate(
-                          { promptId: thread.promptId, body, parentReplyId: parentId },
-                          {
-                            onSuccess: () => setReplyParentId(null),
-                          },
-                        );
-                      }}
-                    />
-                  </SectionCard>
-                </>
-              ) : (
-                <Body>Conversation could not be loaded.</Body>
-              )}
-            </View>
           </>
         ) : null}
 
@@ -376,6 +317,48 @@ export default function PromptThreadScreen() {
             />
           </>
         ) : null}
+
+        <PromptThreadFollowUpsSection
+          activityLoading={activityLoading}
+          addReplyPending={addThreadReply.isPending}
+          isUnlockedPhase={vm.phase === 'unlocked'}
+          meId={meId}
+          partnerName={partnerName}
+          parentReplyId={replyParentId}
+          prefillRevision={replyInject.rev}
+          prefillText={replyInject.text}
+          replyReactionPending={threadReplyReact.isPending}
+          replyRoots={replyRoots}
+          threadActivity={threadActivity}
+          onClearParent={() => setReplyParentId(null)}
+          onReact={(replyId, emoji) =>
+            threadReplyReact.mutate({
+              promptId: thread.promptId,
+              replyId,
+              emoji,
+            })
+          }
+          onReply={(parentId) => setReplyParentId(parentId)}
+          onSubmitReply={(body, parentId) => {
+            addThreadReply.mutate(
+              { promptId: thread.promptId, body, parentReplyId: parentId },
+              {
+                onSuccess: () => setReplyParentId(null),
+              },
+            );
+          }}
+        >
+          {vm.phase === 'unlocked' && vm.partnerAnswer.imageUri ? (
+            <PhotoFollowUpSuggestions
+              imageUri={vm.partnerAnswer.imageUri}
+              partnerName={partnerName}
+              promptQuestion={vm.question}
+              onSelectLine={(line) => {
+                setReplyInject((s) => ({ rev: s.rev + 1, text: line }));
+              }}
+            />
+          ) : null}
+        </PromptThreadFollowUpsSection>
       </ScrollView>
     </Screen>
   );

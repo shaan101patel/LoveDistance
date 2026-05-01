@@ -37,16 +37,18 @@ export default function SettingsPrivacyScreen() {
           onValueChange={(v) => mutation.mutate({ redactPreviews: v })}
           value={p.redactPreviews}
         />
+        <SettingsToggleRow
+          description="Allows intimate (18+) daily prompts from the library when new days are created for your couple."
+          label="Include intimate (18+) prompts"
+          onValueChange={(v) => mutation.mutate({ allowNsfwPrompts: v })}
+          value={p.allowNsfwPrompts}
+        />
       </View>
     );
   }, [live, mutation, p]);
 
   return (
-    <SectionScaffold
-      kicker="Control"
-      lead={privacyScreenCopy.lead(live)}
-      title="Privacy"
-    >
+    <SectionScaffold kicker="Control" lead={privacyScreenCopy.lead(live)} title="Privacy">
       {query.isLoading ? <Body>Loading…</Body> : null}
       {query.isError ? <Body>Could not load privacy settings.</Body> : null}
       {p ? (

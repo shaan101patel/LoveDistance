@@ -566,6 +566,7 @@ export type Database = {
       };
       user_app_settings: {
         Row: {
+          allow_nsfw_prompts: boolean;
           is_passcode_set: boolean;
           product_analytics: boolean;
           redact_previews: boolean;
@@ -576,6 +577,7 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          allow_nsfw_prompts?: boolean;
           is_passcode_set?: boolean;
           product_analytics?: boolean;
           redact_previews?: boolean;
@@ -586,6 +588,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          allow_nsfw_prompts?: boolean;
           is_passcode_set?: boolean;
           product_analytics?: boolean;
           redact_previews?: boolean;

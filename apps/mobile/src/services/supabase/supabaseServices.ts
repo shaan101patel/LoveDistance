@@ -76,7 +76,13 @@ export const supabaseServices: ServiceRegistry = {
         options: { data: { first_name: firstName.trim() } },
       });
       if (error || !data.user) {
-        throw new Error(error?.message ?? 'Sign up failed');
+        const raw = error?.message ?? 'Sign up failed';
+        if (/email rate limit exceeded|rate limit.*email/i.test(raw)) {
+          throw new Error(
+            'Too many signup emails were sent from this project recently. Wait an hour and try again, or set up custom SMTP in the Supabase dashboard (Authentication → Emails).',
+          );
+        }
+        throw new Error(raw);
       }
       if (!data.session) {
         throw new Error(

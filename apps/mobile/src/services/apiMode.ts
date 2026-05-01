@@ -171,11 +171,6 @@ export const promptTabCopy = {
   openThreadLinkLabel(_live: boolean): string {
     return "Open today's prompt";
   },
-  plusUnlockedBody(live: boolean): string {
-    return live
-      ? 'You are on Plus. Themed prompt packs will appear here in a future release.'
-      : 'You are on Plus (mock). Themed prompt packs will appear here in a future release.';
-  },
 };
 
 /** Timeline tab lead; branch on `EXPO_PUBLIC_API_MODE`. */

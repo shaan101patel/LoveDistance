@@ -30,6 +30,7 @@ import {
   mutualPresenceUtcYmds,
 } from '@/features/home/homeEngagementStreak';
 import { isUserAllowedToToggleHabit } from '@/features/habits/habitPolicy';
+import { pickCouplesPromptForDay } from '@/features/prompts/promptLibraryPick';
 import { getIsPromptRevealed } from '@/features/prompts/revealLogic';
 import {
   mapInviteFailure,
@@ -38,7 +39,6 @@ import {
   signedUrlForBucketPath,
   todayYmdUtc,
 } from '@/services/supabase/helpers';
-const DEFAULT_PROMPT_QUESTION = 'What brought you closer today?';
 
 function randomUuid(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -54,7 +54,10 @@ export async function loadCompleteCoupleProfile(): Promise<CoupleProfile | null>
   const user = userData.user;
   if (!user) return null;
 
-  const { data: memberships } = await sb.from('couple_members').select('couple_id').eq('user_id', user.id);
+  const { data: memberships } = await sb
+    .from('couple_members')
+    .select('couple_id')
+    .eq('user_id', user.id);
   const ids = memberships?.map((m) => m.couple_id) ?? [];
   if (ids.length === 0) return null;
 
@@ -67,7 +70,10 @@ export async function loadCompleteCoupleProfile(): Promise<CoupleProfile | null>
 
   if (!couple) return null;
 
-  const { data: members } = await sb.from('couple_members').select('user_id').eq('couple_id', couple.id);
+  const { data: members } = await sb
+    .from('couple_members')
+    .select('user_id')
+    .eq('couple_id', couple.id);
   const partnerId = members?.find((m) => m.user_id !== user.id)?.user_id;
   if (!partnerId) return null;
 
@@ -183,12 +189,25 @@ export async function getTodayPrompt(): Promise<PromptThread> {
     .maybeSingle();
 
   if (!row) {
+    const { data: userData } = await sb.auth.getUser();
+    const uid = userData.user?.id;
+    let allowNsfw = false;
+    if (uid) {
+      const { data: settings } = await sb
+        .from('user_app_settings')
+        .select('allow_nsfw_prompts')
+        .eq('user_id', uid)
+        .maybeSingle();
+      allowNsfw = settings?.allow_nsfw_prompts ?? false;
+    }
+    const picked = pickCouplesPromptForDay(coupleId, ymd, allowNsfw);
     const { data: inserted, error } = await sb
       .from('couple_prompts')
       .insert({
         couple_id: coupleId,
         prompt_date: ymd,
-        question: DEFAULT_PROMPT_QUESTION,
+        question: picked.question,
+        category: picked.category,
         is_revealed: false,
       })
       .select('*')
@@ -267,7 +286,11 @@ export async function getHomeEngagementStreak(
 
 export async function getPromptById(promptId: string): Promise<PromptThread | null> {
   const sb = requireClient();
-  const { data: row } = await sb.from('couple_prompts').select('*').eq('id', promptId).maybeSingle();
+  const { data: row } = await sb
+    .from('couple_prompts')
+    .select('*')
+    .eq('id', promptId)
+    .maybeSingle();
   if (!row) return null;
   return rowToPromptThread(row);
 }
@@ -290,7 +313,10 @@ export async function submitPromptAnswer(
     const buf = await (await fetch(input.imageUri)).arrayBuffer();
     const { error: upErr } = await sb.storage
       .from('prompt_attachments')
-      .upload(objectPath, buf, { contentType: suffix === 'png' ? 'image/png' : 'image/jpeg', upsert: true });
+      .upload(objectPath, buf, {
+        contentType: suffix === 'png' ? 'image/png' : 'image/jpeg',
+        upsert: true,
+      });
     if (upErr) throw new Error(upErr.message);
     imagePath = objectPath;
   }
@@ -334,18 +360,29 @@ export async function reactToPrompt(promptId: string, emoji: string): Promise<Pr
 
 export async function getThreadActivity(promptId: string): Promise<PromptThreadActivity | null> {
   const sb = requireClient();
-  const { data: promptRow } = await sb.from('couple_prompts').select('id').eq('id', promptId).maybeSingle();
+  const { data: promptRow } = await sb
+    .from('couple_prompts')
+    .select('id')
+    .eq('id', promptId)
+    .maybeSingle();
   if (!promptRow) return null;
 
   const [{ data: replies }, { data: placeholders }] = await Promise.all([
-    sb.from('prompt_replies').select('*').eq('couple_prompt_id', promptId).order('created_at', { ascending: true }),
+    sb
+      .from('prompt_replies')
+      .select('*')
+      .eq('couple_prompt_id', promptId)
+      .order('created_at', { ascending: true }),
     sb.from('prompt_voice_placeholders').select('*').eq('couple_prompt_id', promptId),
   ]);
 
   const replyIds = (replies ?? []).map((r) => r.id);
   let reactionByReply: Record<string, Tables<'prompt_reply_reactions'>[]> = {};
   if (replyIds.length > 0) {
-    const { data: rr } = await sb.from('prompt_reply_reactions').select('*').in('reply_id', replyIds);
+    const { data: rr } = await sb
+      .from('prompt_reply_reactions')
+      .select('*')
+      .in('reply_id', replyIds);
     reactionByReply = {};
     for (const r of rr ?? []) {
       reactionByReply[r.reply_id] = [...(reactionByReply[r.reply_id] ?? []), r];
@@ -473,7 +510,10 @@ export async function sharePost(input: {
   const buf = await (await fetch(input.imageUri)).arrayBuffer();
   const { error: upErr } = await sb.storage
     .from('presence')
-    .upload(objectPath, buf, { contentType: suffix === 'png' ? 'image/png' : 'image/jpeg', upsert: true });
+    .upload(objectPath, buf, {
+      contentType: suffix === 'png' ? 'image/png' : 'image/jpeg',
+      upsert: true,
+    });
   if (upErr) throw new Error(upErr.message);
 
   const { data: row, error } = await sb
@@ -507,7 +547,11 @@ export async function sharePost(input: {
 
 export async function reactToPost(postId: string): Promise<void> {
   const sb = requireClient();
-  const { data: row } = await sb.from('presence_posts').select('reaction_count').eq('id', postId).maybeSingle();
+  const { data: row } = await sb
+    .from('presence_posts')
+    .select('reaction_count')
+    .eq('id', postId)
+    .maybeSingle();
   if (!row) throw new Error('Post not found.');
   const { error } = await sb
     .from('presence_posts')
@@ -533,12 +577,18 @@ export async function getPreferences(): Promise<NotificationPrefs> {
   const { data: userData } = await sb.auth.getUser();
   const user = userData.user;
   if (!user) throw new Error('Not signed in');
-  const { data, error } = await sb.from('user_notification_prefs').select('*').eq('user_id', user.id).single();
+  const { data, error } = await sb
+    .from('user_notification_prefs')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
   if (error || !data) throw new Error(error?.message ?? 'No notification preferences.');
   return mapPrefsRow(data);
 }
 
-export async function updatePreferences(partial: Partial<NotificationPrefs>): Promise<NotificationPrefs> {
+export async function updatePreferences(
+  partial: Partial<NotificationPrefs>,
+): Promise<NotificationPrefs> {
   const sb = requireClient();
   const { data: userData } = await sb.auth.getUser();
   const user = userData.user;
@@ -593,7 +643,11 @@ export async function markRead(ids: string[]): Promise<NotificationInboxItem[]> 
   const user = userData.user;
   if (!user) throw new Error('Not signed in');
   if (ids.length === 0) return listInbox();
-  const { error } = await sb.from('notifications').update({ read: true }).eq('user_id', user.id).in('id', ids);
+  const { error } = await sb
+    .from('notifications')
+    .update({ read: true })
+    .eq('user_id', user.id)
+    .in('id', ids);
   if (error) throw new Error(error.message);
   return listInbox();
 }
@@ -631,12 +685,17 @@ export async function getPrivacy(): Promise<PrivacySettings> {
   const { data: userData } = await sb.auth.getUser();
   const user = userData.user;
   if (!user) throw new Error('Not signed in');
-  const { data, error } = await sb.from('user_app_settings').select('*').eq('user_id', user.id).single();
+  const { data, error } = await sb
+    .from('user_app_settings')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
   if (error || !data) throw new Error(error?.message ?? 'No settings row.');
   return {
     sharePresence: data.share_presence,
     productAnalytics: data.product_analytics,
     redactPreviews: data.redact_previews,
+    allowNsfwPrompts: data.allow_nsfw_prompts,
   };
 }
 
@@ -649,6 +708,7 @@ export async function updatePrivacy(partial: Partial<PrivacySettings>): Promise<
   if (partial.sharePresence !== undefined) patch.share_presence = partial.sharePresence;
   if (partial.productAnalytics !== undefined) patch.product_analytics = partial.productAnalytics;
   if (partial.redactPreviews !== undefined) patch.redact_previews = partial.redactPreviews;
+  if (partial.allowNsfwPrompts !== undefined) patch.allow_nsfw_prompts = partial.allowNsfwPrompts;
   const { data, error } = await sb
     .from('user_app_settings')
     .update(patch)
@@ -660,6 +720,7 @@ export async function updatePrivacy(partial: Partial<PrivacySettings>): Promise<
     sharePresence: data.share_presence,
     productAnalytics: data.product_analytics,
     redactPreviews: data.redact_previews,
+    allowNsfwPrompts: data.allow_nsfw_prompts,
   };
 }
 
@@ -668,7 +729,11 @@ export async function getAppLock(): Promise<AppLockSettings> {
   const { data: userData } = await sb.auth.getUser();
   const user = userData.user;
   if (!user) throw new Error('Not signed in');
-  const { data, error } = await sb.from('user_app_settings').select('*').eq('user_id', user.id).single();
+  const { data, error } = await sb
+    .from('user_app_settings')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
   if (error || !data) throw new Error(error?.message ?? 'No settings row.');
   return {
     requirePasscode: data.require_passcode,
@@ -682,7 +747,11 @@ export async function updateAppLock(partial: Partial<AppLockSettings>): Promise<
   const { data: userData } = await sb.auth.getUser();
   const user = userData.user;
   if (!user) throw new Error('Not signed in');
-  const { data: cur } = await sb.from('user_app_settings').select('*').eq('user_id', user.id).single();
+  const { data: cur } = await sb
+    .from('user_app_settings')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
   if (!cur) throw new Error('No settings row.');
 
   let requirePasscode = partial.requirePasscode ?? cur.require_passcode;
@@ -733,7 +802,11 @@ function mapMemory(r: Tables<'memories'>, imageUri?: string): MemoryItem {
 export async function listMemories(filter: TimelineMemoryFilter = 'all'): Promise<MemoryItem[]> {
   const sb = requireClient();
   const coupleId = await requireCompleteCoupleId();
-  let q = sb.from('memories').select('*').eq('couple_id', coupleId).order('created_at', { ascending: false });
+  let q = sb
+    .from('memories')
+    .select('*')
+    .eq('couple_id', coupleId)
+    .order('created_at', { ascending: false });
   if (filter === 'favorites') {
     q = q.eq('is_favorite', true);
   } else if (filter !== 'all') {
@@ -762,7 +835,10 @@ export async function getMemoryById(memoryId: string): Promise<MemoryItem | null
   return mapMemory(r, imageUri);
 }
 
-export async function setMemoryFavorite(memoryId: string, isFavorite: boolean): Promise<MemoryItem> {
+export async function setMemoryFavorite(
+  memoryId: string,
+  isFavorite: boolean,
+): Promise<MemoryItem> {
   const sb = requireClient();
   const { data, error } = await sb
     .from('memories')
@@ -806,7 +882,11 @@ export async function getHabitsForMonth(monthKey: string): Promise<Habit[]> {
   void monthKey;
   const sb = requireClient();
   const coupleId = await requireCompleteCoupleId();
-  const { data: rows } = await sb.from('habits').select('*').eq('couple_id', coupleId).order('created_at', { ascending: true });
+  const { data: rows } = await sb
+    .from('habits')
+    .select('*')
+    .eq('couple_id', coupleId)
+    .order('created_at', { ascending: true });
   return habitRowsToDomain(rows ?? []);
 }
 
@@ -843,7 +923,12 @@ export async function toggleHabitCompletion(habitId: string, date: string): Prom
     .maybeSingle();
 
   if (existing) {
-    const { error } = await sb.from('habit_completions').delete().eq('habit_id', habitId).eq('ymd', date).eq('user_id', user.id);
+    const { error } = await sb
+      .from('habit_completions')
+      .delete()
+      .eq('habit_id', habitId)
+      .eq('ymd', date)
+      .eq('user_id', user.id);
     if (error) throw new Error(error.message);
   } else {
     const { error } = await sb.from('habit_completions').insert({
@@ -857,7 +942,10 @@ export async function toggleHabitCompletion(habitId: string, date: string): Prom
   return getHabitsForMonth(date.slice(0, 7));
 }
 
-export async function logRitualSignal(kind: RitualSignalKind, body: string): Promise<RitualSignalEntry[]> {
+export async function logRitualSignal(
+  kind: RitualSignalKind,
+  body: string,
+): Promise<RitualSignalEntry[]> {
   const sb = requireClient();
   const text = body.trim();
   if (!text) throw new Error('Message cannot be empty.');
@@ -946,7 +1034,12 @@ export async function getRelationshipDashboardSnapshot(): Promise<RelationshipDa
   const sinceYmd = since.toISOString().slice(0, 10);
   const sinceIso = since.toISOString();
 
-  const [{ count: memoryTotal }, { data: memHighlights }, { data: promptRows }, { data: memTypes }] = await Promise.all([
+  const [
+    { count: memoryTotal },
+    { data: memHighlights },
+    { data: promptRows },
+    { data: memTypes },
+  ] = await Promise.all([
     sb.from('memories').select('*', { count: 'exact', head: true }).eq('couple_id', coupleId),
     sb
       .from('memories')
@@ -967,7 +1060,10 @@ export async function getRelationshipDashboardSnapshot(): Promise<RelationshipDa
 
   const { data: answersForPrompts } =
     promptIds.length > 0
-      ? await sb.from('prompt_answers').select('couple_prompt_id, user_id').in('couple_prompt_id', promptIds)
+      ? await sb
+          .from('prompt_answers')
+          .select('couple_prompt_id, user_id')
+          .in('couple_prompt_id', promptIds)
       : { data: [] as { couple_prompt_id: string; user_id: string }[] };
 
   const answerersByPrompt = new Map<string, Set<string>>();
@@ -1061,10 +1157,9 @@ export async function getRelationshipDashboardSnapshot(): Promise<RelationshipDa
       weeks,
     },
     gratitude: {
-      insight:
-        gratitudeRows?.length
-          ? 'Gratitude memories you saved recently, grouped by week.'
-          : 'When you save gratitude moments to the timeline, they will show up here.',
+      insight: gratitudeRows?.length
+        ? 'Gratitude memories you saved recently, grouped by week.'
+        : 'When you save gratitude moments to the timeline, they will show up here.',
       weekLabels: gratWeekKeys.map(shortWeekLabel),
       entriesPerWeek,
     },

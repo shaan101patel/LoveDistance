@@ -170,6 +170,8 @@ export function useAddThreadReply() {
     mutationFn: services.threadInteraction.addThreadReply,
     onSuccess: (next) => {
       queryClient.setQueryData(['threadActivity', next.promptId], next);
+      void queryClient.invalidateQueries({ queryKey: ['prompt', 'thread', next.promptId] });
+      void queryClient.invalidateQueries({ queryKey: ['prompt', 'today'] });
     },
   });
 }

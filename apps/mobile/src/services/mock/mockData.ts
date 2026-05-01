@@ -15,6 +15,7 @@ import type {
   SubscriptionState,
   UserProfile,
 } from '@/types/domain';
+import { COUPLES_PROMPT_LIBRARY } from '@/data/generatedCouplesPromptLibrary';
 import { getIsPromptRevealed } from '@/features/prompts/revealLogic';
 
 export const mockMe: UserProfile = {
@@ -28,11 +29,15 @@ export const mockPartner: UserProfile = {
   timeZone: 'Europe/London',
 };
 
+const mockSeedPrompt =
+  COUPLES_PROMPT_LIBRARY.find((e) => e.categoryId === 'distance_reunion') ??
+  COUPLES_PROMPT_LIBRARY[0]!;
+
 export const initialPromptThread: PromptThread = {
   promptId: 'prompt-today',
   date: new Date().toISOString().slice(0, 10),
-  question: 'What small moment made you feel close to me this week?',
-  category: { id: 'cat-connection', label: 'Connection' },
+  question: mockSeedPrompt.text,
+  category: { id: mockSeedPrompt.categoryId, label: mockSeedPrompt.categoryLabel },
   answers: [],
   isRevealed: false,
   reactions: [],
@@ -235,7 +240,7 @@ export const initialMemories: MemoryItem[] = [
     id: 'memory-photo-2',
     type: 'photo',
     title: 'Coffee in the old neighborhood',
-    summary: "Sent from the corner cafe — next time we split a pastry in person.",
+    summary: 'Sent from the corner cafe — next time we split a pastry in person.',
     createdAt: '2025-11-18T15:40:00.000Z',
     deepLinkRef: 'memory:photo-legacy-2',
     isFavorite: false,
@@ -264,7 +269,7 @@ export const initialMemories: MemoryItem[] = [
     type: 'milestone',
     milestoneKind: 'notable',
     title: 'First time meeting in the new city',
-    summary: "Train station hug. You were wearing the scarf I mailed you.",
+    summary: 'Train station hug. You were wearing the scarf I mailed you.',
     createdAt: '2025-09-14T14:30:00.000Z',
     deepLinkRef: 'memory:meet-new-city',
     isFavorite: true,
@@ -382,6 +387,7 @@ export const initialPrivacy: PrivacySettings = {
   sharePresence: true,
   productAnalytics: false,
   redactPreviews: true,
+  allowNsfwPrompts: false,
 };
 
 export const initialAppLock: AppLockSettings = {
@@ -452,9 +458,7 @@ export function upsertPromptPhotoFusionMemory(): void {
   mockDb.memories = mockDb.memories.filter((m) => m.id !== fusionId);
   const withPhoto = [...t.answers]
     .filter((a) => a.imageUri)
-    .sort(
-      (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
-    )[0];
+    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0];
   if (!withPhoto) {
     return;
   }

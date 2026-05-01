@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter, type Href } from 'expo-router';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -99,6 +99,11 @@ export function NotificationInboxBody({
   const { data, isLoading, isError, refetch } = useNotificationInbox(INBOX_LIMIT);
   const markRead = useMarkNotificationsRead();
   const markAll = useMarkAllNotificationsRead();
+  /** Unique per mount so peek + full-screen inboxes do not share one Realtime topic. */
+  const realtimeChannelInstanceId = useRef(
+    globalThis.crypto?.randomUUID?.() ??
+      `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -112,7 +117,7 @@ export function NotificationInboxBody({
     }
     const sb = supabaseClient;
     const channel = sb
-      .channel(`notifications-inbox:${meId}`)
+      .channel(`notifications-inbox:${meId}:${realtimeChannelInstanceId.current}`)
       .on(
         'postgres_changes',
         {

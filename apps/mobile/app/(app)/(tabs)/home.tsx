@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Link, type Href } from 'expo-router';
 import { useLayoutEffect, useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -25,16 +25,11 @@ import {
   useTodayPrompt,
 } from '@/features/hooks';
 import { composeHomeFeed } from '@/features/home/homeFeedComposer';
-import { MOCK_PARTNER_TIME_ZONE } from '@/features/rituals/ritualTimePresentation';
 import { isMorningRitualCompleteForUser } from '@/features/rituals/morningRitual';
 import { formatYmdLocal, toMonthKey } from '@/lib/calendarDates';
 import { resolveUserTimeZone } from '@/lib/userTimeZone';
 import { homeQuickLinksCopy, isSupabaseApiMode } from '@/services/apiMode';
 import { useServices } from '@/services/ServiceContext';
-import {
-  devSimulatePartnerTodayAnswer,
-  devSimulatePartnerTodayReaction,
-} from '@/services/mock/mockDevHelpers';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
@@ -43,7 +38,6 @@ const HOME_TAB_SUBTITLE = "Today's question, shared presence, and small ritual";
 export default function HomeScreen() {
   const navigation = useNavigation();
   const theme = useTheme();
-  const queryClient = useQueryClient();
   const services = useServices();
   const { data: session } = useQuery({
     queryKey: ['auth', 'session'],
@@ -67,7 +61,7 @@ export default function HomeScreen() {
   );
   const partner = couple?.partner;
   const homeTimeZone = resolveUserTimeZone(session?.user.timeZone);
-  const partnerTimeZone = partner?.timeZone?.trim() || MOCK_PARTNER_TIME_ZONE;
+  const partnerTimeZone = partner?.timeZone?.trim() || homeTimeZone;
   const live = isSupabaseApiMode();
   const quickLinks = useMemo(
     (): { href: Href; label: string; hint: string }[] => [
@@ -184,49 +178,6 @@ export default function HomeScreen() {
               <Body>We’re missing your account link for today’s card. Re-open the app or sign in again.</Body>
             </SectionCard>
           )}
-
-          {__DEV__ && partner && thread && meId ? (
-            <View
-              style={{
-                borderWidth: 1,
-                borderColor: theme.colors.border,
-                borderRadius: 12,
-                padding: spacing.md,
-                gap: spacing.sm,
-                backgroundColor: theme.colors.surfaceAlt,
-              }}
-            >
-              <Text style={{ color: theme.colors.textMuted, fontSize: 12, fontWeight: '600' }}>
-                Mock (dev only)
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                <Pressable
-                  onPress={() => {
-                    devSimulatePartnerTodayAnswer();
-                    void queryClient.invalidateQueries({ queryKey: ['prompt', 'today'] });
-                    void queryClient.invalidateQueries({ queryKey: ['prompt', 'streak'] });
-                  }}
-                  style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-                >
-                  <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>
-                    Partner answers today
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    devSimulatePartnerTodayReaction();
-                    void queryClient.invalidateQueries({ queryKey: ['prompt', 'today'] });
-                    void queryClient.invalidateQueries({ queryKey: ['prompt', 'streak'] });
-                  }}
-                  style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-                >
-                  <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>
-                    Partner reacts
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          ) : null}
 
           <View
             style={{

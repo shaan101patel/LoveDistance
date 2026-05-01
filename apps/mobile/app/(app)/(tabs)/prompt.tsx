@@ -6,10 +6,10 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { TabHeaderTitle } from '@/components/navigation/TabHeaderTitle';
 import { EmptyState } from '@/components/primitives';
 import { Button } from '@/components/primitives/Button';
-import { PremiumGate, PremiumUpsellBanner } from '@/components/premium';
+import { PromptTabExtraModes } from '@/components/promptTab';
 import { SectionScaffold } from '@/components/section/SectionScaffold';
 import { Body, SectionCard } from '@/components/ui';
-import { useTodayPrompt } from '@/features/hooks';
+import { usePrivacySettings, useTodayPrompt } from '@/features/hooks';
 import { isSupabaseApiMode, promptTabCopy } from '@/services/apiMode';
 import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -21,6 +21,8 @@ export default function PromptTabScreen() {
   const theme = useTheme();
   const live = isSupabaseApiMode();
   const { data: thread, isLoading, isError } = useTodayPrompt();
+  const privacyQuery = usePrivacySettings();
+  const allowNsfw = privacyQuery.query.data?.allowNsfwPrompts ?? false;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -54,6 +56,7 @@ export default function PromptTabScreen() {
             <Pressable onPress={() => router.push('/(app)/(tabs)/home' as Href)}>
               <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>Go to Home</Text>
             </Pressable>
+            <PromptTabExtraModes allowNsfw={allowNsfw} promptId={thread.promptId} />
           </View>
         ) : (
           <>
@@ -67,28 +70,6 @@ export default function PromptTabScreen() {
           </>
         )}
       </SectionCard>
-
-      <View style={{ gap: spacing.sm }}>
-        <Text style={{ ...theme.type.bodySm, color: theme.colors.textMuted, fontWeight: '600' }}>
-          Extra prompt packs
-        </Text>
-        <PremiumGate
-          feature="extra_prompt_packs"
-          fallback={
-            <View style={{ gap: spacing.sm }}>
-              <PremiumUpsellBanner
-                message="Seasonal and long-distance packs—gentle add-ons, never required."
-                onPress={() => router.push('/(app)/plus' as Href)}
-              />
-              <Body>Your daily prompt above stays exactly as it is for everyone.</Body>
-            </View>
-          }
-        >
-          <SectionCard>
-            <Body>{promptTabCopy.plusUnlockedBody(live)}</Body>
-          </SectionCard>
-        </PremiumGate>
-      </View>
     </SectionScaffold>
   );
 }

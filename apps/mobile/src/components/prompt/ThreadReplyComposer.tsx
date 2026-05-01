@@ -71,9 +71,7 @@ export function ThreadReplyComposer({
             <Text style={styles.link}>cancel</Text>
           </Pressable>
         </View>
-      ) : (
-        <Text style={styles.hint}>Add a follow-up to this prompt</Text>
-      )}
+      ) : null}
       <TextInput
         accessibilityLabel="Follow-up message"
         multiline

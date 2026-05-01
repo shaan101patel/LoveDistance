@@ -13,7 +13,7 @@ const partnerId = 'user-partner';
 const baseThread = (): PromptThread => ({
   promptId: 'p1',
   date: '2026-01-15',
-  question: 'What small moment made you feel close to me this week?',
+  question: 'What is one specific thing I did recently that made you feel deeply appreciated?',
   answers: [],
   isRevealed: false,
   reactions: [],
@@ -112,7 +112,7 @@ describe('composeHomeFeed', () => {
     });
     expect(vm.daily.state).toBe('gated');
     expect(vm.daily.ctaLabel).toBe('Morning check-in');
-    expect(vm.daily.question).not.toContain('What small moment');
+    expect(vm.daily.question).not.toContain('What is one specific thing I did recently');
   });
 
   it('maps completed state to a finished status line and CTA', () => {

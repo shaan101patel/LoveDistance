@@ -232,6 +232,8 @@ export type PrivacySettings = {
   sharePresence: boolean;
   productAnalytics: boolean;
   redactPreviews: boolean;
+  /** When true, daily prompt may include NSFW-tagged questions from the couples library. */
+  allowNsfwPrompts: boolean;
 };
 
 /**
