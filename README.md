@@ -1,4 +1,4 @@
-# LoveDistance
+# [LoveLongDistance](https://love-long-distance.vercel.app/welcome)
 
 LoveDistance is for **best friends or couples** who want to stay close across long distance. Share **photos**, explore **interesting conversation topics and prompts**, and use more shared rituals in one place—so miles apart still feels connected.
 
