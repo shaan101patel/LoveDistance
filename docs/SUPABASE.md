@@ -6,11 +6,17 @@ The repo includes SQL migrations under `supabase/migrations/` and an Edge Functi
 
 | Path | Purpose |
 |------|---------|
-| `supabase/migrations/` | Ordered DDL: extensions, profiles, couples, invites, prompts, presence, habits, memories, notifications, RLS, RPCs (`create_invite`), triggers (e.g. prompt reveal, timeline memory sync, partner notifications). |
+| `supabase/migrations/` | Ordered DDL: extensions, profiles, couples, invites, prompts, presence, habits, memories, notifications, RLS, RPCs (`create_invite`), triggers (e.g. prompt reveal, timeline memory sync, partner notifications). Includes `waitlist_signups` for the public `/landing` waitlist. |
 | `supabase/functions/accept-invite/` | Edge Function: validates invite token, completes couple, consumes invite (uses service role on server). |
 | `supabase/functions/notification-digest/` | Edge Function: runs `run_notification_digest_job()` (unanswered EOD, habit nudge, pairing anniversary, reunion countdown). Call on a schedule with **service role** `Authorization`. |
 | `supabase/functions/dispatch-expo-push/` | Edge Function: POST body `{ "record": { "id": "<notification id>", "user_id": "…" } }` (or Database Webhook payload); sends Expo push to `user_push_tokens` for that user. Requires `EXPO_ACCESS_TOKEN` secret. |
 | `supabase/config.toml` | Local CLI defaults; may include `project_id` after linking for convenience—**do not** rely on it for secrets. |
+
+## Landing waitlist (`waitlist_signups`)
+
+- **Purpose**: Store emails from the marketing screen at `/landing` in the Expo web app.
+- **Client access**: `anon` and `authenticated` may **INSERT** only (RLS policies). There are no `SELECT` policies for those roles, so the table cannot be scraped via the anon key.
+- **Deploy**: After `supabase db push`, ensure production `apps/mobile` has `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` so the landing page can submit.
 
 ## Linking and migrations
 

@@ -53,9 +53,6 @@ export default function PromptTabScreen() {
               label={promptTabCopy.openThreadLinkLabel(live)}
               onPress={() => router.push(openThreadHref)}
             />
-            <Pressable onPress={() => router.push('/(app)/(tabs)/home' as Href)}>
-              <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>Go to Home</Text>
-            </Pressable>
             <PromptTabExtraModes allowNsfw={allowNsfw} promptId={thread.promptId} />
           </View>
         ) : (
