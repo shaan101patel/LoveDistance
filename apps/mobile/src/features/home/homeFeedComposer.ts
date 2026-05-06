@@ -7,13 +7,6 @@ export type DailyPromptCardState =
   | 'unlocked'
   | 'completed';
 
-export type PartnerActivityRow = {
-  id: string;
-  faIcon: 'heart' | 'image' | 'comment';
-  title: string;
-  subtitle: string;
-};
-
 export type StreakPreviewModel = {
   currentStreakDays: number;
   copyLine: string;
@@ -30,7 +23,6 @@ export type HomeFeedViewModel = {
     statusLine: string;
     ctaLabel: string;
   };
-  partnerActivity: { heading: string; rows: PartnerActivityRow[] };
   streak: StreakPreviewModel;
 };
 
@@ -133,26 +125,6 @@ function buildDailyCopy(
   }
 }
 
-function buildPlaceholderActivity(partnerFirstName: string): HomeFeedViewModel['partnerActivity'] {
-  return {
-    heading: 'Partner activity (sample)',
-    rows: [
-      {
-        id: 'checkin',
-        faIcon: 'comment',
-        title: `${partnerFirstName} · last check-in (sample)`,
-        subtitle: '“Thinking of you this morning.”',
-      },
-      {
-        id: 'prompt',
-        faIcon: 'heart',
-        title: 'Streaks build here (sample)',
-        subtitle: 'You both answered 3 of 5 recent prompts',
-      },
-    ],
-  };
-}
-
 function buildLiveStreakCard(partnerFirstName: string, currentStreakDays: number): StreakPreviewModel {
   return {
     currentStreakDays,
@@ -180,7 +152,6 @@ export function composeHomeFeed(input: ComposeInput): HomeFeedViewModel {
   const state = deriveHomeDailyPromptState(thread, meId, partnerId, morningRitualDone);
   return {
     daily: buildDailyCopy(state, thread.question, thread.promptId, partnerFirstName),
-    partnerActivity: buildPlaceholderActivity(partnerFirstName),
     streak: buildLiveStreakCard(partnerFirstName, currentStreakDays),
   };
 }

@@ -138,7 +138,6 @@ describe('composeHomeFeed', () => {
     });
     expect(vm.daily.state).toBe('completed');
     expect(vm.daily.ctaLabel).toBe('View thread');
-    expect(vm.partnerActivity.heading).toContain('sample');
     expect(vm.streak.disclaimer).toBeUndefined();
     expect(vm.streak.currentStreakDays).toBe(4);
   });

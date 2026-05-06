@@ -191,21 +191,6 @@ export const photosTabCopy = {
   },
 };
 
-/** Home quick-link hints under the feed. */
-export const homeQuickLinksCopy = {
-  rhythmHint(live: boolean): string {
-    return live
-      ? 'Warm trends from your time together'
-      : 'Warm trends from your time together (mock sample)';
-  },
-  recapHint(live: boolean): string {
-    return live ? 'Pick up to five photos for your week' : 'Pick up to five photos for your week (mock)';
-  },
-  alertsHint(live: boolean): string {
-    return live ? 'Notification center' : 'Notification center (mock events)';
-  },
-};
-
 /** Calendar tab strings that referenced mock-only rules. */
 export const calendarTabCopy = {
   habitChangeDeniedMock(live: boolean): string {

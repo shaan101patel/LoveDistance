@@ -1,15 +1,13 @@
 import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
-import { Link, type Href } from 'expo-router';
 import { useLayoutEffect, useMemo } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { TabHeaderTitle } from '@/components/navigation/TabHeaderTitle';
-import { Avatar, Card } from '@/components/primitives';
+import { Avatar } from '@/components/primitives';
 import {
   DailyPromptCard,
   LatestSharedPhotoBlock,
-  PartnerActivitySection,
   StreakPreviewPlaceholder,
   StoryHighlightsBlock,
 } from '@/components/home';
@@ -28,7 +26,6 @@ import { composeHomeFeed } from '@/features/home/homeFeedComposer';
 import { isMorningRitualCompleteForUser } from '@/features/rituals/morningRitual';
 import { formatYmdLocal, toMonthKey } from '@/lib/calendarDates';
 import { resolveUserTimeZone } from '@/lib/userTimeZone';
-import { homeQuickLinksCopy, isSupabaseApiMode } from '@/services/apiMode';
 import { useServices } from '@/services/ServiceContext';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
@@ -62,26 +59,6 @@ export default function HomeScreen() {
   const partner = couple?.partner;
   const homeTimeZone = resolveUserTimeZone(session?.user.timeZone);
   const partnerTimeZone = partner?.timeZone?.trim() || homeTimeZone;
-  const live = isSupabaseApiMode();
-  const quickLinks = useMemo(
-    (): { href: Href; label: string; hint: string }[] => [
-      { href: '/(app)/(tabs)/photos', label: 'Photos', hint: 'Shared presence' },
-      { href: '/(app)/(tabs)/calendar', label: 'Calendar', hint: 'Habits & time' },
-      {
-        href: '/(app)/relationship-dashboard' as Href,
-        label: 'Rhythm',
-        hint: homeQuickLinksCopy.rhythmHint(live),
-      },
-      {
-        href: '/(app)/weekly-recap/select' as Href,
-        label: 'Recap',
-        hint: homeQuickLinksCopy.recapHint(live),
-      },
-      { href: '/(app)/notifications' as Href, label: 'Alerts', hint: homeQuickLinksCopy.alertsHint(live) },
-    ],
-    [live],
-  );
-
   const streakQuery = useHomeEngagementStreak(thread?.date, homeTimeZone);
   const streakDaysForFeed = streakQuery.isSuccess
     ? streakQuery.data
@@ -107,6 +84,10 @@ export default function HomeScreen() {
   const showFeedSkeleton =
     Boolean(partner) &&
     (coupleLoading || sessionUserLoading || promptLoading || habitsLoading || streakBlocking);
+  const dailyPromptAtBottom =
+    homeFeed != null &&
+    homeFeed.daily.state !== 'gated' &&
+    homeFeed.daily.state !== 'unanswered';
 
   return (
     <SectionScaffold hideHero>
@@ -161,7 +142,7 @@ export default function HomeScreen() {
                 homeTimeZone={homeTimeZone}
                 partnerTimeZone={partnerTimeZone}
               />
-              <DailyPromptCard daily={homeFeed.daily} />
+              {!dailyPromptAtBottom ? <DailyPromptCard daily={homeFeed.daily} /> : null}
               {presencePosts?.[0] ? (
                 <LatestSharedPhotoBlock
                   meId={meId}
@@ -170,38 +151,14 @@ export default function HomeScreen() {
                 />
               ) : null}
               <StoryHighlightsBlock />
-              <PartnerActivitySection model={homeFeed.partnerActivity} />
               <StreakPreviewPlaceholder model={homeFeed.streak} />
+              {dailyPromptAtBottom ? <DailyPromptCard daily={homeFeed.daily} /> : null}
             </View>
           ) : (
             <SectionCard>
               <Body>We’re missing your account link for today’s card. Re-open the app or sign in again.</Body>
             </SectionCard>
           )}
-
-          <View
-            style={{
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              gap: spacing.sm,
-              justifyContent: 'flex-start',
-            }}
-          >
-            {quickLinks.map((item) => (
-              <Link key={item.label} asChild href={item.href}>
-                <Pressable style={{ flexGrow: 1, minWidth: 120, maxWidth: 200 }}>
-                  <Card elevated={false} style={{ padding: spacing.md }}>
-                    <Text style={{ color: theme.colors.textPrimary, fontWeight: '700', fontSize: 16 }}>
-                      {item.label}
-                    </Text>
-                    <Text style={{ color: theme.colors.textSecondary, fontSize: 13, marginTop: 4 }}>
-                      {item.hint}
-                    </Text>
-                  </Card>
-                </Pressable>
-              </Link>
-            ))}
-          </View>
         </View>
       ) : (
         <SectionCard>
